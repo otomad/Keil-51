@@ -1,0 +1,36 @@
+C51 COMPILER V9.60.0.0   YEQU_SHORT                                                        07/03/2021 03:42:51 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE YEQU_SHORT
+OBJECT MODULE PLACED IN .\Objects\yequ_short.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE songs\yequ_short.c OMF2 OPTIMIZE(8,SPEED) BROWSE DEBUG PRINT(.\Listings\yeq
+                    -u_short.lst) OBJECT(.\Objects\yequ_short.obj)
+
+line level    source
+
+   1          #include "notes.h"
+   2          note code yeQu[] = {{F4,0.172},{G4,0.172},{G_4,0.345},{G_4,0.172},{G_4,0.345},{G_4,0.517},{G4,0.345},{C5,0
+             -.172},{C5,0.862},{F5,0.345},{F5,0.172},{F5,0.345},{D_5,0.345},{C_5,0.172},{D_5,0.345},{G_4,0.172},{G_4,0.862},{C_5,0.345
+             -},{C_5,0.172},{C_5,0.345},{C_5,0.345},{C_5,0.172},{C5,0.345},{G4,0.345},{C5,0.345},{A_4,0.345},{A_4,0.345},{G_4,0.172},{
+             -G4,0.345},{G_4,0.517},{G_4,0.69},{G4,0.345},{F4,0.172},{G4,0.172},{G_4,0.345},{G_4,0.172},{G_4,0.345},{G_4,0.517},{G4,0.
+             -345},{C5,0.172},{C5,0.862},{F5,0.345},{F5,0.172},{F5,0.345},{D_5,0.345},{C_5,0.172},{D_5,0.345},{G_4,0.172},{G_4,0.862},
+             -{C_5,0.345},{C_5,0.172},{C_5,0.345},{C_5,0.345},{C_5,0.172},{C5,0.345},{A_4,0.345},{G_4,0.345},{G4,0.345},{G4,0.345},{G_
+             -4,0.172},{F4,1.897},{END,0}};
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   ----    ----
+   CONSTANT SIZE    =    310    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

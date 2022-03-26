@@ -1,0 +1,11 @@
+".\Objects\main.obj",
+".\Objects\ads1118.obj",
+".\Objects\lcd1602.obj",
+".\Objects\delay.obj",
+".\Objects\buzzer.obj",
+".\Objects\key.obj",
+".\Objects\uart.obj",
+".\Objects\ChineseGBK.obj" 
+TO ".\Objects\ads1118" 
+
+PRINT(".\Listings\ads1118.map") REMOVEUNUSED 

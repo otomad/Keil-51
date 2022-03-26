@@ -1,0 +1,41 @@
+C51 COMPILER V9.60.0.0   CHINESEGBK                                                        07/02/2021 22:57:54 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE CHINESEGBK
+OBJECT MODULE PLACED IN .\Objects\ChineseGBK.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE ChineseGBK.c OMF2 OPTIMIZE(8,SPEED) BROWSE DEBUG PRINT(.\Listings\ChineseGB
+                    -K.lst) OBJECT(.\Objects\ChineseGBK.obj)
+
+line level    source
+
+   1          #include "ChineseGBK.h"
+   2          
+   3          char code str_commandStartMeasure[] = "开始测量";
+   4          
+   5          char code str_commandStopMeasure[] = "停止";
+   6          
+   7          char code str_startMeasure[] = "\xd5\xfd在测量电压，请等\xb4\xfd\xa3\xa1\r\n"; // 正在测量电压，请等待！
+   8          
+   9          char code str_stopMeasure[] = "测量结束！\r\n";
+  10          
+  11          char code str_completeCaption[] = "当前电压：";
+  12          
+  13          char code str_welcome[] = "按下 S1 按键或使用串口发送“开始测量”开始测量电压。\r\n";
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   ----    ----
+   CONSTANT SIZE    =    118    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

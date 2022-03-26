@@ -1,0 +1,178 @@
+C51 COMPILER V9.60.0.0   MAIN                                                              07/03/2021 16:28:23 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE main.c OMF2 OPTIMIZE(8,SPEED) BROWSE DEBUG PRINT(.\Listings\main.lst) OBJEC
+                    -T(.\Objects\main.obj)
+
+line level    source
+
+   1          /**
+   2           * 按键说明：
+   3           * ┌─┬─┬─┬─┐   ┌─┬─┬─┬─┐
+   4           * │1│2│3│A│ → │1│2│3│+│
+   5           * ├─┼─┼─┼─┤   ├─┼─┼─┼─┤
+   6           * │4│5│6│B│ → │4│5│6│-│
+   7           * ├─┼─┼─┼─┤   ├─┼─┼─┼─┤
+   8           * │7│8│9│C│ → │7│8│9│×│
+   9           * ├─┼─┼─┼─┤   ├─┼─┼─┼─┤
+  10           * │*│0│#│D│ → │←│0│=│÷│
+  11           * └─┴─┴─┴─┘   └─┴─┴─┴─┘
+  12           * 先按 # 再按 0 表示 AC
+  13           */
+  14          
+  15          #include <regx52.h>
+  16          #include <intrins.h>
+  17          #include <stdio.h>
+  18          #include "buzzer.h"
+  19          #include "delay.h"
+  20          #include "lcd1602.h"
+  21          #include "matrixkey.h"
+  22          #include "str.h"
+  23          #include "timer0.h"
+  24          #include "calc.h"
+  25          
+  26          #define alertBeep beepTime(880, 500)
+  27          #define alertBeepShort beepTime(880, 250)
+  28          #define alertBeepError beepTime(440, 1000)
+  29          
+  30          //unsigned char cursor = 1;
+  31          char symbols[] = " 1234567890+-*/";
+  32          char input[17];
+  33          
+  34          void showCursor(bit show) {
+  35   1              unsigned char pos = str_getLength(input) + 1;
+  36   1              LCD_ShowChar(1, pos, show ? '_' : ' ');
+  37   1      }
+  38          
+  39          void main() {
+  40   1              unsigned char keyNum;
+  41   1              alertBeep;
+  42   1              LCD_Init();
+  43   1              
+  44   1              LCD_ShowString(1, 1, "Calculator");
+  45   1              LCD_ShowString(2, 1, "   + - * / =    ");
+  46   1              delay(1000);
+  47   1      
+  48   1              LCD_ClearLine(2);
+  49   1              LCD_ShowString(1, 1, "1900100324");
+  50   1              LCD_ShowString(2, 1, "WangChenYi"); // 王晨懿
+  51   1              delay(1000);
+  52   1      
+  53   1              LCD_ShowString(1, 1, "1900100327");
+  54   1              LCD_ShowString(2, 1, "XueHan    "); // 薛涵
+C51 COMPILER V9.60.0.0   MAIN                                                              07/03/2021 16:28:23 PAGE 2   
+
+  55   1              delay(1000);
+  56   1              
+  57   1              LCD_WriteCommand(0x01);
+  58   1              timer0Init(); // 之后初始化定时器 0，要不然一启动就能显示光标了
+  59   1              showCursor(1);
+  60   1              
+  61   1              while (1) {
+  62   2                      unsigned char len = str_getLength(input);
+  63   2                      bit ac = 0; // 归零指示标志位
+  64   2                      keyNum = MatrixKey();
+  65   2                      if (keyNum) {
+  66   3                              if (!startTimer0 && keyNum <= 10) {
+  67   4                                      input[0] = '\0';
+  68   4                                      len = 0;
+  69   4                                      if (keyNum == 10) ac = 1;
+  70   4                              }
+  71   3                              startTimer0 = 1;
+  72   3                              if (keyNum <= 14) { // 除 * # 键外
+  73   4                                      #define syntaxError {\
+  74   4                                              alertBeepError;\
+  75   4                                              continue;\
+  76   4                                      }
+  77   4                                      if (len >= 16) syntaxError // 超过屏幕最大 16 位限度
+  78   4                                      else {
+  79   5                                              if (keyNum >= 11) { // + - * /
+  80   6                                                      if (symbols[keyNum] == '+' || symbols[keyNum] == '*' || symbols[keyNum] == '/') {
+  81   7                                                              if (
+  82   7                                                                      len == 0 // 在开头输入除负号外的符号
+  83   7                                                                      || len == 1 && input[len - 1] == '-' // 在负号之后输入符号（开头）
+  84   7                                                                      || len > 1 && input[len - 1] == '-' && (input[len - 2] == '+' || input[len - 2] == '*' || input[le
+             -n - 2] == '/') // 在负号之后输入符号（中间）
+  85   7                                                              ) syntaxError
+  86   7                                                              if (input[len - 1] == '+' || input[len - 1] == '-' || input[len - 1] == '*' || input[len - 1] == '/
+             -') str_removeLast(input); // 可以更改符号
+  87   7                                                      } else if (symbols[keyNum] == '-') { // 减号亦可用作负号
+  88   7                                                              if (len == 1 && (input[len - 1] == '+' || input[len - 1] == '-' || input[len - 1] == '*' || input[l
+             -en - 1] == '/')) syntaxError // 在负号之后输入符号
+  89   7                                                              if (len > 1 && (input[len - 1] == '+' || input[len - 1] == '-')) str_removeLast(input); // 可以�
+             -�改符号
+  90   7                                                      }
+  91   6                                              }
+  92   5                                              if (!ac) str_appendChar(input, symbols[keyNum]);
+  93   5                                      }
+  94   4                              }
+  95   3                              if (keyNum == 15) { // ←
+  96   4                                      str_removeLast(input); // 清除末位
+  97   4                              }
+  98   3                              if (keyNum == 16) { // =
+  99   4                                      double result;
+ 100   4                                      char result_str[17];
+ 101   4                                      if (input[0] == '\0') continue;
+ 102   4                                      while (input[str_getLength(input) - 1] < '0') str_removeLast(input); // 清除末尾多余的符号
+ 103   4                                      result = calc(input);
+ 104   4                                      sprintf(result_str, "%g", result); // 为什么不用 %16g？因为这样写当其为科学计数法�
+             -�会出现位数的 bug
+ 105   4                                      str_rightAlign(result_str, 16);
+ 106   4                                      LCD_ShowString(2, 1, result_str);
+ 107   4                                      startTimer0 = 0;
+ 108   4                              }
+ 109   3                              LCD_ClearLine(1);
+ 110   3                              LCD_ShowString(1, 1, input); // 更新显示屏，概率性会错位
+ 111   3                              if (keyNum == 10) { // 0
+C51 COMPILER V9.60.0.0   MAIN                                                              07/03/2021 16:28:23 PAGE 3   
+
+ 112   4                                      if (len > 0 && input[len - 1] == '/') { // 如果除以 0
+ 113   5                                              startTimer0 = 0;
+ 114   5                                              LCD_ShowString(2, 1, "Error ");
+ 115   5                                              alertBeepError;
+ 116   5                                              str_removeLast(input);
+ 117   5                                              LCD_ClearLine(1);
+ 118   5                                              LCD_ShowString(1, 1, input);
+ 119   5                                              LCD_ClearLine(2);
+ 120   5                                              startTimer0 = 1;
+ 121   5                                              showCursor(1);
+ 122   5                                      }
+ 123   4                              }
+ 124   3                              showCursor(1);
+ 125   3                              alertBeepShort;
+ 126   3                      }
+ 127   2              }
+ 128   1      }
+ 129          
+ 130          void timer0Routine() interrupt 1 {
+ 131   1              static unsigned int T0Count;
+ 132   1              static bit timeSetFlashFlag = 1; // 显示光标指示器
+ 133   1              TL0 = 0x18; // 设置定时初值
+ 134   1              TH0 = 0xFC; // 设置定时初值
+ 135   1              T0Count++;
+ 136   1              if (T0Count >= 500) { // 每 500ms 进入一次
+ 137   2                      T0Count = 0;
+ 138   2                      timeSetFlashFlag = !timeSetFlashFlag; // 光标指示器反转
+ 139   2                      showCursor(timeSetFlashFlag);
+ 140   2              }
+ 141   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    830    ----
+   CONSTANT SIZE    =     82    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     35      23
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1       2
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

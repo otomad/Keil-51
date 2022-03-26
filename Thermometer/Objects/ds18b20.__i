@@ -1,0 +1,1 @@
+"ds18b20.c" OMF2 OPTIMIZE (8,SPEED) BROWSE DEBUG PRINT(.\Listings\ds18b20.lst) OBJECT(.\Objects\ds18b20.obj)

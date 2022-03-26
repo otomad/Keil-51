@@ -1,0 +1,105 @@
+C51 COMPILER V9.60.0.0   ISR                                                               06/29/2021 23:26:28 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE ISR
+OBJECT MODULE PLACED IN .\Objects\isr.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE isr.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\isr.l
+                    -st) OBJECT(.\Objects\isr.obj)
+
+line level    source
+
+   1          #include <reg52.h>
+   2          
+   3          unsigned char irtime = 0;
+   4          unsigned char irdate[33] = 0;
+   5          unsigned char bitnum = 0;
+   6          unsigned char irok = 0;
+   7          unsigned char irnum[4];
+   8          unsigned char ir_changed = 0;
+   9          bit start_flag = 0;
+  10          // sbit buzzer = P3 ^ 6;
+  11          
+  12          void init0_init() {
+  13   1              EA = 1;
+  14   1              IT0 |= 1; //设置中断为下降沿触发
+  15   1              EX0 = 1; //打开外部中断
+  16   1      }
+  17          
+  18          void timer0_isr() interrupt 1 {
+  19   1              irtime++;
+  20   1      }
+  21          
+  22          void init0_isr() interrupt 0 {
+  23   1              if(start_flag) {
+  24   2                      if((irtime > 45) && (irtime < 60))
+  25   2                              bitnum = 0;
+  26   2              irdate[bitnum] = irtime;
+  27   2              bitnum++;
+  28   2              irtime = 0;
+  29   2              if(33 == bitnum) {
+  30   3                              bitnum = 0;
+  31   3                              irok = 1;
+  32   3                              ir_changed = 1;
+  33   3              }                
+  34   2          } else {
+  35   2                      irtime = 0;
+  36   2                      start_flag = 1;
+  37   2          }
+  38   1      }
+  39          
+  40          void ir_process() {
+  41   1              unsigned char i = 0, j = 0, k = 1, temp;
+  42   1              for(i = 0; i < 4; i++) {
+  43   2                      for(j = 0; j < 8; j++) {
+  44   3                              temp >>= 1;
+  45   3                              if(irdate[k] > 6)
+  46   3                                      temp +=0x80;
+  47   3                              k++;
+  48   3                      }
+  49   2                      irnum[i] = temp;
+  50   2              }
+  51   1      }
+  52          
+  53          unsigned char return_choose(unsigned char num) {
+  54   1              unsigned char i, code remoteCode[] = {0x45,0x46,0x47,0x44,0x40,0x43,0x07,0x15,0x09,0x16,0x19,0x0D,0x0C,0x
+C51 COMPILER V9.60.0.0   ISR                                                               06/29/2021 23:26:28 PAGE 2   
+
+             -18,0x5E,0x08,0x1C,0x5A,0x42,0x52,0x4A};
+  55   1              for (i = 0; i < 21; i++)
+  56   1                      if (remoteCode[i] == num)
+  57   1                              return i + 1;
+  58   1              return 0;
+  59   1      }
+  60          
+  61          unsigned char ir_getKey() {
+  62   1              unsigned char choose;
+  63   1              if (irok) {
+  64   2                      ir_process();
+  65   2              if ((irnum[0] + irnum[1] == 0xff) && (irnum[2] + irnum[3] == 0xff)) {                            
+  66   3                              choose = return_choose(irnum[2]);
+  67   3                      }
+  68   2              } else choose = 0;
+  69   1              return choose;
+  70   1      }
+  71          
+  72          /*unsigned char chose = 0;
+  73          unsigned char ir_changed() {
+  74                  unsigned char choose = ir_getKey();
+  75                  unsigned char isChanged = chose != choose;
+  76                  chose = choose;
+  77                  return isChanged;
+  78          }*/
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    233    ----
+   CONSTANT SIZE    =     21    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     41    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

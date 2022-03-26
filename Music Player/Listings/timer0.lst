@@ -1,0 +1,90 @@
+C51 COMPILER V9.60.0.0   TIMER0                                                            07/03/2021 03:42:50 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE TIMER0
+OBJECT MODULE PLACED IN .\Objects\timer0.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE timer0.c OMF2 OPTIMIZE(8,SPEED) BROWSE DEBUG PRINT(.\Listings\timer0.lst) O
+                    -BJECT(.\Objects\timer0.obj)
+
+line level    source
+
+   1          #include <regx52.h>
+   2          
+   3          #define TL 0x18
+   4          #define TH 0xfc
+   5          
+   6          void Timer0Init(void) {
+   7   1              TMOD &= 0xF0; //设置定时器模式
+   8   1              TMOD |= 0x01; //设置定时器模式
+   9   1              TL0 = TL; //设置定时初值
+  10   1              TH0 = TH; //设置定时初值
+  11   1              TF0 = 0; //清除TF0标志
+  12   1              TR0 = 0; //定时器0开始计时
+  13   1              ET0 = 1;
+  14   1              EA = 1;
+  15   1              PT0 = 0;
+  16   1      }
+  17          
+  18          void Timer0InitValue(void) {
+  19   1              TL0 = TL; //设置定时初值
+  20   1              TH0 = TH; //设置定时初值
+  21   1      }
+  22          
+  23          void setTimer0Start(unsigned char start) {
+  24   1              TR0 = !!start;
+  25   1      }
+  26          
+  27          unsigned int time;
+  28          unsigned char timeout = 1;
+  29          
+  30          void setTimeout(unsigned int t) {
+  31   1              time = t;
+  32   1              timeout = 0;
+  33   1              TR0 = 1;
+  34   1      }
+  35          
+  36          void Timer0Routine() interrupt 1 {
+  37   1              static unsigned int T0Count;
+  38   1              Timer0InitValue();
+  39   1              T0Count++;
+  40   1              if (T0Count >= time) {
+  41   2                      T0Count = 0;
+  42   2                      timeout = 1;
+  43   2                      //TR0 = 0;
+  44   2              }
+  45   1      }
+  46          
+  47          /*定时器中断函数模板
+  48          void Timer0_Routine() interrupt 1
+  49          {
+  50                  static unsigned int T0Count;
+  51                  TL0 = 0x18;             //设置定时初值
+  52                  TH0 = 0xFC;             //设置定时初值
+  53                  T0Count++;
+  54                  if(T0Count>=1000)
+C51 COMPILER V9.60.0.0   TIMER0                                                            07/03/2021 03:42:50 PAGE 2   
+
+  55                  {
+  56                          T0Count=0;
+  57                          
+  58                  }
+  59          }
+  60          */
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     95    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      5    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

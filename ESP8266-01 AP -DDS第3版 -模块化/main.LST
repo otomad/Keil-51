@@ -1,0 +1,361 @@
+C51 COMPILER V9.60.0.0   MAIN                                                              05/11/2021 18:57:51 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN main.OBJ
+COMPILER INVOKED BY: E:\Keil5_533\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND TABS(2)
+
+line level    source
+
+   1          #include "public.h"      
+   2          #include "temp.h"
+   3          #include "Buzzer.h"
+   4          #include "string.h"
+   5          #include "Nixie.h"
+   6          #include "Key.h"
+   7           #define CommLenMax       50     //Í¨ÐÅ»º³åÇø³¤¶È
+   8          
+   9          unsigned int CrcCheckSum(unsigned char *puchMsg, unsigned char usDataLen);//CRC16/XMODEMÐ£ÑéÂë
+  10          void ServiceCOMM();
+  11          
+  12          sbit led1=P1^3;
+  13          sbit led2=P1^1;
+  14          
+  15          bit mode=0;
+  16          
+  17          
+  18          
+  19          
+  20          unsigned char TrLen=0, TrCount=0, RecCount=0, RecChar=0, RecLen=0;  //
+  21          bit RecStart, RecOK;
+  22          unsigned char idata ComBuf[CommLenMax];//Ö¸ÁîµÄ´¢´æÊý×é
+  23          unsigned char  num[9]={0x55,0xAA,0x30,0x20,0x01,0xD3,0x62,0xAA,0x55};
+  24          unsigned char  AT[14]={'A','T','+','C','I','P','S','E','N','D','=','0',','};
+  25          
+  26          
+  27          /*unsigned int word; //Õ¼ÓÃ2¸ö×Ö½Ú
+  28          unsigned char byte[2];//Õ¼ÓÃ2¸ö1×Ö½Ú,Ò²ÊÇ2×Ö½Ú
+  29          union±íÊ¾wordºÍbyte[0],byte[1]¹²ÓÃÏàÍ¬µØÖ·µÄ2×Ö½ÚÄÚ´æÇø
+  30          1Â¥µÄ²»ÒªÎóµ¼±ðÈËÅ¶
+  31          ÓÃtypedef À´ÉùÃ÷Ò»¸ö¹²ÓÃÌåÀàÐÍ,ÀàÐÍÃû³ÆÎªunWord16*/
+  32          
+  33            union
+  34           {
+  35            unsigned char uc_Byte[2];
+  36            unsigned int  ui_Word;//Ð£ÑéÂë
+  37           }un_CRCResult;
+  38           
+  39          
+  40          //#define RELOAD_COUNT 0xFA //ºê¶¨Òå²¨ÌØÂÊ·¢ÉúÆ÷µÄÔØÈëÖµ 9600
+  41          
+  42          #if 1
+  43          u8 RecBuf[50];
+  44          u8 recFlagOK=0;
+  45          #endif
+  46          
+  47          u8 tempData[9];
+  48          
+  49          void UART_Init()  //9600bps@11.0592MHz
+  50          {
+  51   1        EA=0;
+  52   1       
+  53   1        PCON &= 0x7F;   //²¨ÌØÂÊ²»±¶ËÙ
+  54   1        SCON = 0x50;    //8Î»Êý¾Ý,¿É±ä²¨ÌØÂÊ
+  55   1        TMOD &= 0x0F;   //Çå³ý¶¨Ê±Æ÷1Ä£Ê½Î»
+C51 COMPILER V9.60.0.0   MAIN                                                              05/11/2021 18:57:51 PAGE 2   
+
+  56   1        TMOD |= 0x20;   //Éè¶¨¶¨Ê±Æ÷1Îª8Î»×Ô¶¯ÖØ×°·½Ê½
+  57   1        TL1 = 0xFD;   //Éè¶¨¶¨Ê±³õÖµ
+  58   1        TH1 = 0xFD;   //Éè¶¨¶¨Ê±Æ÷ÖØ×°Öµ
+  59   1        ET1 = 0;    //½ûÖ¹¶¨Ê±Æ÷1ÖÐ¶Ï
+  60   1        TR1 = 1;    //Æô¶¯¶¨Ê±Æ÷1
+  61   1      
+  62   1       ES=0;         //´®ÐÐÖÐ¶ÏÔÊÐí
+  63   1       TR1=1;        //Æô¶¯¶¨Ê±Æ÷1
+  64   1       EA=1;         //ÔÊÐíÖÐ¶Ï
+  65   1      }
+  66          
+  67          void UART_SendByte(u8 dat)
+  68          {
+  69   1        ES=0; //¹Ø±Õ´®¿ÚÖÐ¶Ï
+  70   1        TI=0; //Çå·¢ËÍÍê±ÏÖÐ¶ÏÇëÇó±êÖ¾Î»
+  71   1        SBUF=dat; //·¢ËÍ
+  72   1        while(TI==0); //µÈ´ý·¢ËÍÍê±Ï
+  73   1        TI=0; //Çå·¢ËÍÍê±ÏÖÐ¶ÏÇëÇó±êÖ¾Î»
+  74   1        ES=1; //ÔÊÐí´®¿ÚÖÐ¶Ï
+  75   1      }
+  76          
+  77          void ESP8266_SendCmd(u8 *pbuf)
+  78          {
+  79   1        while(*pbuf!='\0') //Óöµ½¿Õ¸ñÌø³öÑ­»· 
+  80   1        {
+  81   2          UART_SendByte(*pbuf);
+  82   2          delay_10us(5);
+  83   2          pbuf++; 
+  84   2        }
+  85   1        delay_10us(5);
+  86   1        UART_SendByte('\r');//»Ø³µ
+  87   1        delay_10us(5);
+  88   1        UART_SendByte('\n');//»»ÐÐ
+  89   1        delay_ms(1000);
+  90   1      }
+  91          
+  92          
+  93          
+  94          //ESP8266-WIFIÄ£¿é¹¤×÷Ä£Ê½³õÊ¼»¯
+  95          void ESP8266_ModeInit(void)
+  96          {
+  97   1        
+  98   1      
+  99   1        ESP8266_SendCmd("AT+CWMODE=2");//ÉèÖÃÂ·ÓÉÆ÷Ä£Ê½ 1 staTIonÄ£Ê½ 2 APµã Â·ÓÉÆ÷Ä£Ê½ 3 station+AP»ìºÏÄ£Ê½  
+ 100   1        ESP8266_SendCmd("AT+CWSAP=\"ESP8266\",\"12345678\",11,3"); //ÉèÖÃWIFIÈÈµãÃû¼°ÃÜÂë 
+ 101   1        ESP8266_SendCmd("AT+CIPAP=\"192.168.4.1\"");//ÖØÐÂÆô¶¯wifiÄ£¿é
+ 102   1      //  ESP8266_SendCmd("AT+RST");//ÖØÐÂÆô¶¯wifiÄ£¿é
+ 103   1        ESP8266_SendCmd("AT+CIPMUX=1"); //¿ªÆô¶àÁ¬½ÓÄ£Ê½£¬ÔÊÐí¶à¸ö¸÷¿Í»§¶Ë½ÓÈë
+ 104   1        ESP8266_SendCmd("AT+CIPSERVER=1,8080"); //Æô¶¯TCP/IP ¶Ë¿ÚÎª8080 ÊµÏÖ»ùÓÚÍøÂç¿ØÖÆ  
+ 105   1        
+ 106   1      }
+ 107          
+ 108          
+ 109          //Ö÷º¯Êý***********************************************
+ 110          void main()
+ 111          { 
+ 112   1        UART_Init(); //´®¿Ú³õÊ¼»¯
+ 113   1        ESP8266_ModeInit();
+ 114   1        ES=1; //ÔÊÐí´®¿ÚÖÐ¶Ï
+ 115   1        while(1)
+ 116   1        {
+ 117   2          
+C51 COMPILER V9.60.0.0   MAIN                                                              05/11/2021 18:57:51 PAGE 3   
+
+ 118   2          if(RecOK)
+ 119   2          {
+ 120   3            EA=0;
+ 121   3            ServiceCOMM();
+ 122   3            AT[13]=RecLen+'0';
+ 123   3                  ESP8266_SendCmd(AT);
+ 124   3                  ESP8266_SendCmd(ComBuf);
+ 125   3            RecOK=0;
+ 126   3            memset(ComBuf,'\0',50);
+ 127   3            memset(RecBuf,'\0',50);//ºÜÖØÒªµÄ²½Öè
+ 128   3            EA=1;
+ 129   3            
+ 130   3          }
+ 131   2        }   
+ 132   1      }
+ 133          
+ 134          #if 1
+ 135          void Usart() interrupt 4
+ 136          {
+ 137   1        static u8 i=0;
+ 138   1        static u8 j=0;
+ 139   1        
+ 140   1        if(RI)
+ 141   1        {
+ 142   2          RI=0; 
+ 143   2          RecBuf[i++]=SBUF;//Òª×¢Òâ×îºóiµÄÈ¡Öµ£¬Êµ¼ÊÎª×Ö·û´®×Ö·û³¤¶È¡£
+ 144   2          if(RecBuf[i-1]=='\n')
+ 145   2          {
+ 146   3            i=0;
+ 147   3            memset(RecBuf,'\0',50);
+ 148   3          } 
+ 149   2          if(RecBuf[9]==0x55)
+ 150   2            {
+ 151   3              ComBuf[j]=RecBuf[9+j];        
+ 152   3              j++;
+ 153   3            }
+ 154   2          if(i>11)
+ 155   2            {
+ 156   3              RecLen=RecBuf[11]+6;
+ 157   3              if(j>RecLen-1)
+ 158   3              {
+ 159   4                j=0;
+ 160   4                RecOK=1;
+ 161   4              }
+ 162   3            }
+ 163   2            
+ 164   2          
+ 165   2            
+ 166   2        }
+ 167   1        
+ 168   1      }
+ 169            
+ 170                  
+ 171          #endif
+ 172            
+ 173          unsigned int CrcCheckSum(unsigned char *puchMsg, unsigned char usDataLen)//CRC16/XMODEMÐ£ÑéÂë
+ 174          {
+ 175   1      unsigned int wCRCin = 0x0000;
+ 176   1      unsigned int wCPoly = 0x1021;
+ 177   1      unsigned char wChar = 0;
+ 178   1      unsigned char i;
+ 179   1      while (usDataLen--) 
+C51 COMPILER V9.60.0.0   MAIN                                                              05/11/2021 18:57:51 PAGE 4   
+
+ 180   1      {
+ 181   2        wChar = *(puchMsg++);
+ 182   2        wCRCin ^= (wChar << 8);
+ 183   2        for( i = 0; i < 8; i++) 
+ 184   2        {
+ 185   3          if (wCRCin & 0x8000)
+ 186   3            wCRCin = (wCRCin << 1) ^ wCPoly;
+ 187   3          else
+ 188   3            wCRCin = wCRCin << 1;
+ 189   3        }
+ 190   2      }
+ 191   1      return (wCRCin);
+ 192   1      }
+ 193            
+ 194            
+ 195            
+ 196          void ServiceCOMM()
+ 197          {
+ 198   1        unsigned char n=0;
+ 199   1       
+ 200   1             
+ 201   1         un_CRCResult.ui_Word = CrcCheckSum(&ComBuf[2], RecLen-6);  //Êµ¼ÊÊÇ´Ó³¤¶È×Ö¿ªÊ¼¼ÆËã£¬Êý¾Ý³¤¶ÈÎªRecLen-6£
+             -¬¼õÈ¥¼ìÑéÂë£¬ÃüÁîÍ·£¬Î²£¬¾ÍÊÇ¼õÈ¥6
+ 202   1         if((un_CRCResult.uc_Byte[1] != ComBuf[RecLen-4])||(un_CRCResult.uc_Byte[0] != ComBuf[RecLen-3]))//¼ìÑéÂë
+             -±È½Ï
+ 203   1         {  
+ 204   2           Buzzer_Time(1000); 
+ 205   2         }
+ 206   1           ComBuf[RecLen-4]=un_CRCResult.uc_Byte[1];
+ 207   1           ComBuf[RecLen-3]=un_CRCResult.uc_Byte[0];
+ 208   1           ComBuf[RecLen-2]=0xAA;
+ 209   1           ComBuf[RecLen-1]=0x55;
+ 210   1          
+ 211   1        switch(ComBuf[3]) //ÃüÁî·ÖÎö¡£µÚ4¸ö×Ö½ÚÎªÃüÁî×Ö
+ 212   1        {
+ 213   2          case 0x20:  //Á÷Ë®µÆ
+ 214   2             {   
+ 215   3                ComBuf[0]=0x55;//·µ»ØÖµ
+ 216   3                ComBuf[1]=0xAA;
+ 217   3                ComBuf[2]=0x03;
+ 218   3                ComBuf[3]=0x20;
+ 219   3               P1=ComBuf[4];//ComBuf[4]ÎªÊý¾ÝÓò
+ 220   3         
+ 221   3               break;
+ 222   3            }
+ 223   2          case 0x21:  //ÊýÂë¹Ü
+ 224   2             {   
+ 225   3                  if( ComBuf[2]==0x06)         
+ 226   3                 {
+ 227   4                  //*******************
+ 228   4                    Nixie(1,ComBuf[4]);
+ 229   4                    Nixie(2,ComBuf[5]);
+ 230   4                    Nixie(3,ComBuf[6]);
+ 231   4                    Nixie(4,ComBuf[7]);
+ 232   4                  //*******************
+ 233   4                   ComBuf[0]=0x55;
+ 234   4                   ComBuf[1]=0xAA;
+ 235   4                   ComBuf[2]=0x06;
+ 236   4                   ComBuf[3]=0x21;
+ 237   4                   
+ 238   4                   AT[13]=RecLen+'0';
+ 239   4                  ESP8266_SendCmd(AT);
+C51 COMPILER V9.60.0.0   MAIN                                                              05/11/2021 18:57:51 PAGE 5   
+
+ 240   4                  ESP8266_SendCmd(ComBuf);
+ 241   4                 }
+ 242   3                else if ( ComBuf[2]==0x04)
+ 243   3                {
+ 244   4                   /*
+ 245   4               
+ 246   4                  */
+ 247   4                  ComBuf[0]=0x55;
+ 248   4                  ComBuf[1]=0xAA;
+ 249   4                  ComBuf[2]=0x04;
+ 250   4                  ComBuf[3]=0x21;
+ 251   4                }
+ 252   3               break;
+ 253   3            } 
+ 254   2          case 0x22:  //·äÃùÆ÷
+ 255   2             {   
+ 256   3                 
+ 257   3                 
+ 258   3               if( ComBuf[2]==0x06)        
+ 259   3                 {
+ 260   4                    /*
+ 261   4               
+ 262   4                  */
+ 263   4                   ComBuf[0]=0x55;
+ 264   4                   ComBuf[1]=0xAA;
+ 265   4                   ComBuf[2]=0x06;
+ 266   4                   ComBuf[3]=0x22;
+ 267   4                 }
+ 268   3                else if ( ComBuf[2]==0x04)
+ 269   3                {
+ 270   4                   /*
+ 271   4               
+ 272   4                  */
+ 273   4                  ComBuf[0]=0x55;
+ 274   4                  ComBuf[1]=0xAA;
+ 275   4                  ComBuf[2]=0x04;
+ 276   4                  ComBuf[3]=0x22;
+ 277   4                }
+ 278   3               break;
+ 279   3            }   
+ 280   2          case 0x23:  //°´¼ü
+ 281   2             {   
+ 282   3               //*******************
+ 283   3            unsigned char keynum=Key();
+ 284   3                switch(ComBuf[4])
+ 285   3                {
+ 286   4                  case 0x03:keynum=1;break;
+ 287   4                  case 0x04:keynum=2;break;
+ 288   4                  case 0x05:keynum=3;break;
+ 289   4                  case 0x06:keynum=4;break;
+ 290   4                }
+ 291   3                if(keynum==1)
+ 292   3                {
+ 293   4                  P1=0;
+ 294   4                  keynum=0;
+ 295   4                }
+ 296   3              //*******************
+ 297   3                ComBuf[0]=0x55;//·µ»ØÖµ
+ 298   3                ComBuf[1]=0xAA;
+ 299   3                ComBuf[2]=0x03;
+ 300   3                ComBuf[3]=0x23;
+ 301   3               break;
+C51 COMPILER V9.60.0.0   MAIN                                                              05/11/2021 18:57:51 PAGE 6   
+
+ 302   3            }
+ 303   2          case 0x90:  //¶ÁÈ¡²ÎÊýÖµ
+ 304   2             {   
+ 305   3                ComBuf[0]=0x55;//·µ»ØÖµ
+ 306   3                ComBuf[1]=0xAA;
+ 307   3                ComBuf[2]=0x03;
+ 308   3                ComBuf[3]=0x20;
+ 309   3               
+ 310   3                
+ 311   3               break;
+ 312   3            }
+ 313   2           
+ 314   2          default:
+ 315   2          {     //ÆäËû
+ 316   3            RecOK=0;
+ 317   3             break;
+ 318   3          }
+ 319   2        }  
+ 320   1      } 
+ 321            
+ 322            
+ 323            
+ 324            
+ 325            
+ 326            
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    843    ----
+   CONSTANT SIZE    =    102    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     92      14
+   IDATA SIZE       =     50    ----
+   BIT SIZE         =      3    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

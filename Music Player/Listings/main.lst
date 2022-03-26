@@ -1,0 +1,199 @@
+C51 COMPILER V9.60.0.0   MAIN                                                              07/03/2021 12:16:37 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE main.c OMF2 OPTIMIZE(8,SPEED) BROWSE DEBUG PRINT(.\Listings\main.lst) OBJEC
+                    -T(.\Objects\main.obj)
+
+line level    source
+
+   1          #include "public.h"
+   2          
+   3          unsigned char keyNum, flag = 0; //标志位
+   4          
+   5          char xdata keyAbs[] = { -10, -9, -7, -5, -4, -2, 0, 2, 3, 5 };
+   6          // unsigned int correctPassword = 1111;
+   7          
+   8          #define alertBeep beepTime(880, 250)
+   9          #define alertOk {\
+  10                  LCD_ShowString(1, 14, "OK ");\
+  11                  alertBeep;\
+  12          }
+  13          #define alertError {\
+  14                  LCD_ShowString(1, 14, "ERR");\
+  15                  beepTime(440, 500);\
+  16          }
+  17          #define clearPassword LCD_ShowString(2, 1, "__________")
+  18          #define testBeep false
+  19          
+  20          #if testBeep
+              void main() {
+              //      int i;
+                      Timer1Init();
+              //      while (true) {
+              //              for (i = 1; i <= 8; i++)
+              //                      beepTime(key2hz(keyAbs[i]), 1000);
+                              setBeepHz(100);
+              //      }
+              }
+              #else
+  31          void main() {
+  32   1              unsigned int count;
+  33   1              unsigned long int password;
+  34   1      //      Timer0Init();
+  35   1      //      Buzzer_Time(500); //响铃0.5s
+  36   1              alertBeep;
+  37   1      
+  38   1              LCD_Init();
+  39   1              
+  40   1              LCD_ShowString(1, 1, "Piano &"); // 电子琴 和
+  41   1              LCD_ShowString(2, 1, "Music Player"); // 音乐播放器
+  42   1              delay(1000);
+  43   1      
+  44   1              #define USER_ID_1 1900100328
+  45   1              LCD_ShowNum(1, 1, USER_ID_1, 10);
+  46   1              LCD_ShowString(2, 1, "ZhouRongChun"); // 周荣春
+  47   1              delay(1000);
+  48   1      
+  49   1              #define USER_ID_2 1900100306
+  50   1              LCD_ShowNum(1, 1, USER_ID_2, 10);
+  51   1              LCD_ShowString(2, 1, "TangXueTao  "); // 唐雪涛
+  52   1              delay(1000);
+  53   1      
+  54   1              LCD_WriteCommand(0x01); //光标复位，清屏
+C51 COMPILER V9.60.0.0   MAIN                                                              07/03/2021 12:16:37 PAGE 2   
+
+  55   1      
+  56   1              LCD_ShowString(1, 1, "StudentID:"); //学号就是密码
+  57   1              clearPassword;
+  58   1              while (true) {
+  59   2                      keyNum = MatrixKey();
+  60   2                      if (keyNum) {
+  61   3                              LCD_ShowString(1, 14, "   ");
+  62   3                              if (keyNum >= 1 && keyNum <= 10) { //如果薄膜键盘上的0~9键位按下，输入密码
+  63   4                                      if (count < 10) { //如果输入次数小于10
+  64   5                                              password *= 10; //密码左移一位
+  65   5                                              password += keyNum % 10; //获取一位密码
+  66   5                                              count++; //计次加一
+  67   5                                      }
+  68   4                                      LCD_ShowNum(2, 1, password, count); //更新显示
+  69   4                              }
+  70   3                              if (keyNum == 20) { //如果按键A按键按下，确认
+  71   4                                      if ((password == USER_ID_1 || password == USER_ID_2) && count == 10) { //如果密码等于正确密�
+             -�则运行后面程序
+  72   5                                              alertOk;
+  73   5                                              password = 0; //密码清零
+  74   5                                              count = 0; //计次清零
+  75   5                                              LCD_ClearLine(2);
+  76   5      
+  77   5                                              delay(1000);
+  78   5                                              flag = 11; //解锁成功标志位置十一
+  79   5                                              LCD_WriteCommand(0x01); //光标复位，清屏
+  80   5                                              Timer0Init(); // 初始化定时器
+  81   5                                      } else { //否则
+  82   5                                              alertError;
+  83   5                                              keyNum = 21; //相当于按下清除键
+  84   5                                      }
+  85   4                              }
+  86   3                              if (keyNum == 21) { //如果按键B按键按下，取消
+  87   4                                      password = 0; //密码清零
+  88   4                                      count = 0; //计次清零
+  89   4                                      clearPassword; //更新显示
+  90   4                              }
+  91   3                      }
+  92   2                      
+  93   2                      if (flag == 11) { // 进入选择功能菜单
+  94   3                              TR0 = 0;
+  95   3                              LCD_ShowString(1, 1, "1-Keyboard Mode");
+  96   3                              LCD_ShowString(2, 1, "2-Music Mode");
+  97   3                              while (true) {
+  98   4                                      keyNum = MatrixKeyPress();
+  99   4                                      if (keyNum) {
+ 100   5                                              if (keyNum >= 1 && keyNum <= 2) {
+ 101   6                                                      LCD_ClearLine(!(keyNum - 1) + 1);
+ 102   6                                                      beep(880);
+ 103   6                                                      flag = keyNum;
+ 104   6                                                      LCD_WriteCommand(0x01); //光标复位，清屏
+ 105   6                                                      break;
+ 106   6                                              }
+ 107   5                                      }
+ 108   4                              }
+ 109   3                      }
+ 110   2      
+ 111   2                      if (flag == 1) { //进入电子琴模式
+ 112   3                              TR0 = 0;
+ 113   3                              LCD_ShowString(1, 1, "<Keyboard Mode>");
+ 114   3                              while (true) {
+ 115   4                                      keyNum = MatrixKeyPress();
+C51 COMPILER V9.60.0.0   MAIN                                                              07/03/2021 12:16:37 PAGE 3   
+
+ 116   4                                      if (keyNum) {
+ 117   5                                              LCD_ShowNum(2, 13, keyNum, 2);
+ 118   5                                              if (keyNum <= 10)
+ 119   5                                                      beep(key2hz(keyAbs[keyNum % 10]));
+ 120   5                                              if (keyNum == 18) { //#键按下退出电子琴模式
+ 121   6                                                      while (!MatrixKey());
+ 122   6                                                      flag = 11;
+ 123   6                                                      LCD_WriteCommand(0x01); //光标复位，清屏
+ 124   6                                                      break;
+ 125   6                                              }
+ 126   5                                      }
+ 127   4                              }
+ 128   3                      }
+ 129   2                      if (flag == 2) { //音乐模式
+ 130   3                              TR0 = 1;
+ 131   3                              while (true) {
+ 132   4                                      LCD_ShowString(1, 1, "<Music Mode>             ");
+ 133   4                                      keyNum = MatrixKey();
+ 134   4                                      if (keyNum) {
+ 135   5                                              char songName[][13] = { //标题最多12个字母
+ 136   5                                                      "QingTian    ", //播放歌曲 晴天
+ 137   5                                                      "QingHuaCi   ", //播放歌曲 青花瓷
+ 138   5                                                      "YeQu        " //播放歌曲 夜曲
+ 139   5                                              };
+ 140   5                                              LCD_ShowNum(1, 14, keyNum, 2);
+ 141   5                                              if (keyNum >= 1 && keyNum <= 3) {
+ 142   6                                                      unsigned char k = keyNum - 1;
+ 143   6                                                      LCD_ShowString(2, 1, songName[k]);
+ 144   6                                                      playMusic(k);
+ 145   6                                              }
+ 146   5                                              if (keyNum == 18) { //#键按下退出电子琴模式
+ 147   6                                                      flag = 11;
+ 148   6                                                      LCD_WriteCommand(0x01); //光标复位，清屏
+ 149   6                                                      break;
+ 150   6                                              }
+ 151   5                                              if (keyNum == 17) { //*键开启或关闭定时器中断，你自由决定吧
+ 152   6                                                      TR0 = !TR0;
+ 153   6                                                      LCD_ShowString(1, 1, TR0 ? "Interrupt On " : "Interrupt Off");
+ 154   6                                                      alertBeep;
+ 155   6                                                      delay(500);
+ 156   6                                                      continue;
+ 157   6                                              }
+ 158   5                                      }
+ 159   4                                      LCD_ClearLine(2);
+ 160   4                              }
+ 161   3                      }
+ 162   2              }
+ 163   1      }
+ 164          #endif
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    888    ----
+   CONSTANT SIZE    =    219    ----
+   XDATA SIZE       =     10    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      2      46
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+C51 COMPILER V9.60.0.0   MAIN                                                              07/03/2021 12:16:37 PAGE 4   
+
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

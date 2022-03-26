@@ -1,0 +1,136 @@
+C51 COMPILER V9.60.0.0   CSBOFCM                                                           06/30/2021 19:53:41 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE CSBOFCM
+OBJECT MODULE PLACED IN .\Objects\CSBofCM.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE CSBofCM.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\CSBo
+                    -fCM.lst) OBJECT(.\Objects\CSBofCM.obj)
+
+line level    source
+
+   1          #include <reg52.h>
+   2          //#include<STCY1Delay.h>
+   3          #include <lcd1602.h>
+   4          #include <intrins.h>
+   5          #ifndef udata
+   6                  #define udata
+   7                  typedef unsigned char uchar;
+   8                  typedef unsigned int uint;
+   9                  typedef unsigned long ulong;
+  10          #endif
+  11          
+  12          sbit Echo=P1^0;//接受端
+  13          sbit Trig=P1^1;//控制端
+  14          uchar flag;//中断溢出标志
+  15          
+  16          void Delay20us()
+  17                  {
+  18   1                      unsigned char i;
+  19   1                      _nop_();
+  20   1                      i = 7;
+  21   1                      while (--i);
+  22   1              }
+  23                  
+  24          void Delay100ms() 
+  25                  {
+  26   1                      uchar i, j;
+  27   1                      i = 195;
+  28   1                      j = 138;
+  29   1                      do
+  30   1                      {
+  31   2                              while (--j);
+  32   2                      } while (--i);
+  33   1              }
+  34          
+  35          /*****************CSBofCM.h**************/
+  36          /*****************可用函数***************/
+  37          /************编写于2018/08/18************/
+  38          /**************作者：Belous**************/
+  39          /*******测试应用与STC89C516——12MHZ*******/
+  40          void CSB_Init(void);//初始化CSB（初始化定时器T0）
+  41          float CSB_GetOnce(void);//得到一次超声波测距模块的距离
+  42          void CSB_UseLcd1602Show(float distance);//显示距离到Lcd1602的第二行
+  43          /****************************************/
+  44          
+  45          void CSB_UseLcd1602Show(float distance)
+  46          {
+  47   1              uchar i,f1,f2,f3,f4;
+  48   1              code uchar array1[]=" Overflow Show  ";
+  49   1              code uchar array2[]=" CM             ";
+  50   1              //Lcd1602_Init();//是否需要初始化？
+  51   1              Lcd1602_Secondrow();//将在第二行显示
+  52   1              if((distance>=700)||flag==1) //超出测量范围显示"Overflow Show"
+  53   1              {        
+  54   2                      flag=0;//清空中断溢出标志
+C51 COMPILER V9.60.0.0   CSBOFCM                                                           06/30/2021 19:53:41 PAGE 2   
+
+  55   2                      for(i=0;array1[i];i++)
+  56   2                              Lcd1602_WriteDC(array1[i],1);
+  57   2              }
+  58   1              else
+  59   1              {
+  60   2                      f1=(uint)distance/100;//百位
+  61   2                      f2=(uint)distance/10%10;//十位
+  62   2                      f3=(uint)distance%10;//个位
+  63   2                      f4=(uint)(distance*10)%10;
+  64   2                      Lcd1602_WriteDC(f1+0x30,1);
+  65   2                      Lcd1602_WriteDC(f2+0x30,1);
+  66   2                      Lcd1602_WriteDC(f3+0x30,1);
+  67   2                      Lcd1602_WriteDC('.',1);
+  68   2                      Lcd1602_WriteDC(f4+0x30,1);
+  69   2                      for(i=0;array2[i];i++)
+  70   2                              Lcd1602_WriteDC(array2[i],1);
+  71   2              }
+  72   1      }
+  73          float CSB_GetDistance(void)
+  74          {
+  75   1              uint time=TH0*256+TL0;//得到总时间，单位us
+  76   1              float distance=(float)(time*0.017);
+  77   1              TH0=0;
+  78   1              TL0=0;//清空定时器
+  79   1              return distance;
+  80   1      }
+  81          void CSB_Time0() interrupt 1 //T0中断用来计数器溢出,超过测距范围
+  82          {
+  83   1          flag=1;
+  84   1      }
+  85          void CSB_Rstart()//启动模块
+  86          {
+  87   1              Trig=1;
+  88   1              Delay20us();
+  89   1              Trig=0;
+  90   1              return;
+  91   1      }
+  92          void CSB_Init(void)
+  93          {
+  94   1              TMOD=0x01;
+  95   1              TH0=0;
+  96   1              TL0=0;
+  97   1              EA=1;          
+  98   1              ET0=1;
+  99   1      }
+ 100          float CSB_GetOnce(void)//得到一次超声波测距模块的距离
+ 101          {
+ 102   1              CSB_Rstart();
+ 103   1              while(!Echo);//当Echo为零时等待
+ 104   1              TR0=1;//开启计数
+ 105   1              while(Echo);//当Echo为1计数并等待
+ 106   1              TR0=0;//关闭计数
+ 107   1              return CSB_GetDistance();//计算
+ 108   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    320    ----
+   CONSTANT SIZE    =     34    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      1       9
+C51 COMPILER V9.60.0.0   CSBOFCM                                                           06/30/2021 19:53:41 PAGE 3   
+
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

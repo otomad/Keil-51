@@ -1,0 +1,214 @@
+C51 COMPILER V9.60.0.0   UART                                                              06/30/2021 20:59:55 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE UART
+OBJECT MODULE PLACED IN .\Objects\uart.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE uart.c OMF2 OPTIMIZE(8,SPEED) BROWSE DEBUG PRINT(.\Listings\uart.lst) OBJEC
+                    -T(.\Objects\uart.obj)
+
+line level    source
+
+   1          #include <regx52.h>
+   2          #include "tlc5615.h"
+   3          
+   4          //------------------串口通信的数据包协议-----------------//
+   5          /*
+   6                  此程序的串口字符串通信使用到下面的一个自定义协议，每次通信都是发送或接
+             -收一个数据包，数据包格式解释如下(长度恒为15):
+   7                  例如:A01_fmq_01Off___#
+   8                  A--------数据包的开始标记(可以为A到Z,意味着数据包可以有26种)
+   9                  01-----设备代号
+  10                  fmq_01Off___--------指令(长度恒为10)，指令的前4个人字符是指令头部，指令的后6个�
+             -��符是指令尾部
+  11                  #---------数据包的结束标记
+  12          
+  13                  例如:A02_SenT010250#
+  14                  A--------数据包的开始标记(可以为A到Z,意味着数据包可以有26种)
+  15                  02-----设备代号
+  16                  SenT010250--------指令(长度恒为10)，指令的前4个人字符是指令头部，指令的后6个字
+             -符是指令尾部
+  17                  #---------数据包的结束标记
+  18          */
+  19          #define LENGTH 20
+  20          char RecvString_buf[LENGTH]; //定义数据包长度为19个字符
+  21          
+  22          //这个是曾经用来控制温度传感模块（DS18B20）的数据包
+  23          //我随便定义了一个数据包用来做"心跳包"，比如单片机系统向电脑每2秒发送一�
+             -�该数据包，如果电脑没有按时接收到，就认为单片机死掉了
+  24          //----------------------------------------------//
+  25          /*******************************
+  26                                  串口通信
+  27                  MCU:89C52RC        11.0592MHz
+  28          
+  29          //11.0592MHz 0xd0 1200bps
+  30          //12MHz 0xcc 1200bps
+  31          //11.0592MHz 0xfa 9600bps
+  32          //0xf4 11.0592MHz  0xf3 12MHz 4800bps
+  33          //均在SMOD=1的情况下（波特率倍增模式）
+  34          *******************************/
+  35          //串口发送函数
+  36          void PutString(unsigned char *TXStr) {
+  37   1              ES = 0;
+  38   1              while (*TXStr != 0) {
+  39   2                      SBUF = *TXStr;
+  40   2                      while (TI == 0);
+  41   2                      TI = 0;
+  42   2                      TXStr++;
+  43   2              }
+  44   1              ES = 1;
+  45   1      }
+  46          //串口接收函数
+  47          bit ReceiveString() {
+  48   1              char *RecStr = RecvString_buf;
+  49   1              char num = 0;
+  50   1              unsigned char count = 0;
+C51 COMPILER V9.60.0.0   UART                                                              06/30/2021 20:59:55 PAGE 2   
+
+  51   1              while (1) {
+  52   2                      bit flag = 0;
+  53   2                      *RecStr = SBUF;
+  54   2                      count = 0;
+  55   2                      RI = 0;
+  56   2                      num++;
+  57   2                      RecStr++;
+  58   2                      while (!RI) {
+  59   3                              count++;
+  60   3                              if (count > 130) { //接收数据等待延迟，等待时间太久会导致CPU运算闲置，太短会�
+             -��现"数据包被分割",默认count=130
+  61   4                                      flag = 1;
+  62   4                                      break;
+  63   4                              }
+  64   3                      }
+  65   2                      if (num >= LENGTH - 1 || flag) break; //数据包长度为19个字符,尝试连续接收19个字符
+  66   2              }
+  67   1              *RecStr = '\0';
+  68   1              return 1;
+  69   1      }
+  70          //定时器1用作波特率发生器
+  71          void Init_USART() {
+  72   1              EA = 1;
+  73   1              
+  74   1              SCON = 0x50; //串口方式1，使能接收
+  75   1              TMOD |= 0x20; //定时器1工作方式2（8位自动重装初值）
+  76   1              TMOD &= ~0x10;
+  77   1              TH1 = 0xfa; // 9600bps
+  78   1              TL1 = 0xfa;
+  79   1              PCON |= 0x80; // SMOD=1
+  80   1              TR1 = 1;
+  81   1              TI = 0;
+  82   1              RI = 0;
+  83   1              // PS = 1; //提高串口中断优先级
+  84   1              ES = 1; //开启串口中断使能
+  85   1      }
+  86          //比较指令头部
+  87          bit CompareCMD_head(char CMD_head[]) {
+  88   1              unsigned char CharNum, quality;
+  89   1              for (quality = 1; ; quality++)
+  90   1                      if (CMD_head[quality] == '\0')
+  91   1                              break;
+  92   1              for (CharNum = 0; CharNum < quality; CharNum++) { //指令长度为10个字符
+  93   2                      if (RecvString_buf[CharNum] != CMD_head[CharNum]) {
+  94   3                              return 0; //指令头部匹配失败
+  95   3                      }
+  96   2              }
+  97   1              return 1; //指令头部匹配成功
+  98   1      }
+  99          //比较指令尾部(start:从哪里开始比较，quality:比较多少个字符，CMD_tail[]：要比较�
+             -��字符串)
+ 100          bit CompareCMD_tail(unsigned char start, unsigned char quality, char CMD_tail[]) {
+ 101   1              unsigned char CharNum;
+ 102   1              for (CharNum = 0; CharNum < quality; CharNum++) {
+ 103   2                      if (!(RecvString_buf[start + CharNum] == CMD_tail[CharNum])) {
+ 104   3                              return 0;
+ 105   3                      }
+ 106   2              }
+ 107   1              return 1;
+ 108   1      }
+ 109          //统一转换为小写
+ 110          void buff_strlwr() {
+C51 COMPILER V9.60.0.0   UART                                                              06/30/2021 20:59:55 PAGE 3   
+
+ 111   1              unsigned char i;
+ 112   1              for (i = 0; i < LENGTH; i++)
+ 113   1                      if (RecvString_buf[i] >= 'A' && RecvString_buf[i] <= 'Z')
+ 114   1                              RecvString_buf[i] += 0x20;
+ 115   1      }
+ 116          unsigned char getDutyNum() {
+ 117   1              bit modified = 0;
+ 118   1              unsigned char i;
+ 119   1              unsigned long int num = 0;
+ 120   1              for (i = 11; i <= 13; i++) { //表明占空比的数据在第 11~13 位
+ 121   2                      const char ch = RecvString_buf[i];
+ 122   2                      if (ch == '\0') break;
+ 123   2                      if (ch >= '0' && ch <= '9') {
+ 124   3                              modified = 1;
+ 125   3                              num = num * 10 + (ch - '0');
+ 126   3                      }
+ 127   2              }
+ 128   1              if (num > 100) num = 50;
+ 129   1              return (modified ? num : 50);
+ 130   1      }
+ 131          bit Deal_UART_RecData() { //处理串口接收数据包函数（成功处理数据包则返回1，否则�
+             -�回0）
+ 132   1              buff_strlwr(); //将输入的内容全部转换为小写，这样用户输入大小写都是可以的了
+ 133   1      //      PutString(RecvString_buf);
+ 134   1              if (!CompareCMD_head("output ")) return 0;
+ 135   1              if (CompareCMD_tail(7, 3, "sin")) setWaveType(SINE);
+ 136   1              else if (CompareCMD_tail(7, 3, "saw")) setWaveType(SAW);
+ 137   1              else if (CompareCMD_tail(7, 3, "tri")) setWaveType(TRI);
+ 138   1              else if (CompareCMD_tail(7, 3, "pwm") || CompareCMD_tail(7, 3, "sqr") || CompareCMD_tail(7, 3, "squ")) {
+ 139   2                      duty = getDutyNum();
+ 140   2                      setWaveType(SQR);
+ 141   2              }
+ 142   1              else return 0;
+ 143   1              return 1;
+ 144   1      }
+ 145          /************************
+ 146                          中断函数
+ 147          ************************/
+ 148          //串口中断服务函数-----------
+ 149          void USART() interrupt 4 { //标志位TI和RI需要手动复位，TI和RI置位共用一个中断入口
+ 150   1              if (ReceiveString()) {
+ 151   2                      //数据包长度正确则执行以下代码
+ 152   2                      Deal_UART_RecData();
+ 153   2              } else {
+ 154   2                      //数据包长度错误则执行以下代码
+ 155   2                      // LED1=~LED1;
+ 156   2              }
+ 157   1              RI = 0; //接收并处理一次数据后把接收中断标志清除一下，拒绝响应在中断接收�
+             -�的时候发来的请求
+ 158   1      }
+ 159          /***************************
+ 160                          主函数
+ 161          ***************************/
+ 162          /* void main() {
+ 163                  EA = 1;
+ 164                  Init_USART(); //初始化串口中断通信，当串口接受完数据包后，如果检测到数据包�
+             -�含有效指令，则自动执行对应的代码，执行完自动返回到主函数，为了尽可能不影响主函�
+             -�的时序，串口中断函数的执行代码不要过复杂
+ 165                  while (1) {
+ 166                          //下面可以放要经常运行的用户代码，使用PutString()函数来发送数据包，如PutStri
+             -ng(HeartBeat);
+ 167                          //注:空格的ASCII码是:0x20,回车是:0x0D
+C51 COMPILER V9.60.0.0   UART                                                              06/30/2021 20:59:55 PAGE 4   
+
+ 168                  }
+ 169          } */
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    646    ----
+   CONSTANT SIZE    =     32    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     20      13
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       2
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

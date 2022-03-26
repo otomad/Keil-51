@@ -1,0 +1,59 @@
+C51 COMPILER V9.60.0.0   STR                                                               07/01/2021 22:51:03 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE STR
+OBJECT MODULE PLACED IN .\Objects\str.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE str.c OMF2 OPTIMIZE(8,SPEED) BROWSE DEBUG PRINT(.\Listings\str.lst) OBJECT(
+                    -.\Objects\str.obj)
+
+line level    source
+
+   1          unsigned int str_getLength(char *str) {
+   2   1              #define UPPER_LIMIT 255
+   3   1              unsigned int len;
+   4   1              for (len = 0; len <= UPPER_LIMIT; len++)
+   5   1                      if (str[len] == '\0')
+   6   1                              return len;
+   7   1              return 0;
+   8   1      }
+   9          
+  10          char *str_appendChar(char *raw, char newChar) {
+  11   1              unsigned int len = str_getLength(raw);
+  12   1              raw[len] = newChar;
+  13   1              raw[len + 1] = '\0';
+  14   1              return raw;
+  15   1      }
+  16          
+  17          char *str_removeLast(char *raw) {
+  18   1              unsigned int len = str_getLength(raw);
+  19   1              if (len == 0) return raw;
+  20   1              raw[len - 1] = '\0';
+  21   1              return raw;
+  22   1      }
+  23          
+  24          char *str_rightAlign(char *raw, unsigned int width) {
+  25   1              unsigned int len = str_getLength(raw);
+  26   1              int i, j;
+  27   1              raw[width] = '\0';
+  28   1              for (i = width - 1, j = len - 1; i >= 0; i--, j--)
+  29   1                      raw[i] = j >= 0 ? raw[j] : ' ';
+  30   1              return raw;
+  31   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    237    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      17
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

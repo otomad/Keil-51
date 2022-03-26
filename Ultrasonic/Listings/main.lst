@@ -1,0 +1,159 @@
+C51 COMPILER V9.60.0.0   MAIN                                                              07/03/2021 00:30:05 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE main.c OMF2 OPTIMIZE(8,SPEED) BROWSE DEBUG PRINT(.\Listings\main.lst) OBJEC
+                    -T(.\Objects\main.obj)
+
+line level    source
+
+   1          #include <intrins.h>
+   2          #include <regx52.h>
+   3          #include "buzzer.h"
+   4          #include "delay.h"
+   5          #include "lcd1602.h"
+   6          #include "matrixkey.h"
+   7          #include "timer0.h"
+   8          #include "measuring.h"
+   9          #include "stdio.h"
+  10          #include "UART.h"
+  11          #include "ChineseGBK.h"
+  12          
+  13          unsigned char keyNum, flag = 0; //标志位
+  14          
+  15          #define alertBeep beepTime(880, 500)
+  16          #define alertOk {\
+  17                  LCD_ShowString(1, 14, "OK ");\
+  18                  alertBeep;\
+  19          }
+  20          #define alertError {\
+  21                  LCD_ShowString(1, 14, "ERR");\
+  22                  beepTime(440, 500);\
+  23          }
+  24          #define clearPassword LCD_ShowString(2, 1, "__________")
+  25          #define clearSecondLine LCD_ShowString(2, 1, "               ")
+  26          #define USER_ID_1 1900100321
+  27          
+  28          void main() {
+  29   1              unsigned int count;
+  30   1              unsigned long int password;
+  31   1              alertBeep;
+  32   1      
+  33   1              LCD_Init(); //液晶初始化
+  34   1              UART_Init(); //串口初始化
+  35   1              
+  36   1              LCD_ShowString(1, 1, "Ultrasonic"); // 超声波
+  37   1              LCD_ShowString(2, 1, "Range Finder"); // 测距仪
+  38   1              delay(1000);
+  39   1              LCD_WriteCommand(0x01);
+  40   1      
+  41   1              LCD_ShowNum(1, 1, USER_ID_1, 10);
+  42   1              LCD_ShowString(2, 1, "HeYuWen"); // 罗泽芳
+  43   1              delay(1000);
+  44   1      
+  45   1              LCD_WriteCommand(0x01); //光标复位，清屏
+  46   1      
+  47   1              LCD_ShowString(1, 1, "StudentID:"); //学号就是密码
+  48   1              clearPassword;
+  49   1              while (1) {
+  50   2                      keyNum = MatrixKey();
+  51   2                      if (keyNum) {
+  52   3                              LCD_ShowString(1, 14, "   ");
+  53   3                              if (keyNum >= 1 && keyNum <= 10) { //如果薄膜键盘上的0~9键位按下，输入密码
+  54   4                                      if (count < 10) { //如果输入次数小于4
+C51 COMPILER V9.60.0.0   MAIN                                                              07/03/2021 00:30:05 PAGE 2   
+
+  55   5                                              password *= 10; //密码左移一位
+  56   5                                              password += keyNum % 10; //获取一位密码
+  57   5                                              count++; //计次加一
+  58   5                                      }
+  59   4                                      LCD_ShowNum(2, 1, password, count); //更新显示
+  60   4                              }
+  61   3                              if (keyNum == 20) { //如果按键A按键按下，确认
+  62   4                                      if ((password == USER_ID_1) && count == 10) { //如果密码等于正确密码则运行后面程序
+  63   5                                              UART_String(str_correct);
+  64   5                                              alertOk;
+  65   5                                              password = 0; //密码清零
+  66   5                                              count = 0; //计次清零
+  67   5                                              clearSecondLine;
+  68   5      
+  69   5                                              delay(1000);
+  70   5                                              flag = 1; //解锁成功标志位置一
+  71   5      
+  72   5                                              if (flag == 1) LCD_WriteCommand(0x01); //光标复位，清屏
+  73   5                                      } else { //否则
+  74   5                                              UART_String(str_wrong);
+  75   5                                              alertError;
+  76   5                                              password = 0; //密码清零
+  77   5                                              count = 0; //计次清零
+  78   5                                              clearPassword; //更新显示
+  79   5                                      }
+  80   4                              }
+  81   3                              if (keyNum == 21) { //如果按键B按键按下，取消
+  82   4                                      password = 0; //密码清零
+  83   4                                      count = 0; //计次清零
+  84   4                                      clearPassword; //更新显示
+  85   4                              }
+  86   3                      }
+  87   2      
+  88   2                      if (flag == 1) { //进入
+  89   3                              timer0Init(); //定时器0初始化
+  90   3                              measuringInit(); //超声波相应端口初始化
+  91   3                              //为什么把初始化放在这里？因为之前的串口中断会干扰超声波正常运行。
+  92   3                              
+  93   3                              TR0 = 0;
+  94   3                              LCD_ShowString(1, 1, "Press # key to");
+  95   3                              LCD_ShowString(2, 1, "Start Measuring");
+  96   3                              while (1) {
+  97   4                                      keyNum = MatrixKey();
+  98   4                                      if (keyNum) {
+  99   5      //                                      LCD_ShowNum(2, 13, keyNum, 2);
+ 100   5                                              if (keyNum == 18) { //#键按下开始测量
+ 101   6                                                      unsigned long int distance;
+ 102   6                                                      float distance_f;
+ 103   6                                                      char result[10];
+ 104   6                                                      LCD_ShowString(1, 1, "Ranging,       ");
+ 105   6                                                      LCD_ShowString(2, 1, "Please wait... ");
+ 106   6                                                      measuringTrigger(); //触发超声波启动
+ 107   6                                                      while(echo == 0); //等待回声
+ 108   6                                                      distance = measuring(); //进行距离测量
+ 109   6                                                      distance_f = distance / 100.0f;
+ 110   6                                                      delay(500); //这个延迟不是必要的，本身计算就很快，这样前面的“测量中请�
+             -�等”的字都来不及显示。
+ 111   6                                                      LCD_WriteCommand(0x01);
+ 112   6                                                      LCD_ShowString(1, 1, "Distance:");
+ 113   6                                                      sprintf(result, "%.2f cm", distance_f); //对测量结果进行显示
+ 114   6                                                      LCD_ShowString(2, 1, result);
+ 115   6      //                                              LCD_ShowNum(2, 1, distance, 4);
+C51 COMPILER V9.60.0.0   MAIN                                                              07/03/2021 00:30:05 PAGE 3   
+
+ 116   6                                                      measuringInit(); //超声波相应端口初始化
+ 117   6                                                      beepTime(880, 300);
+ 118   6                                                      delay(500);
+ 119   6                                                      beepTime(880, 300);
+ 120   6                                                      delayt(600); //每次测量间隔 60 ms
+ 121   6                                              }
+ 122   5                                      }
+ 123   4                              }
+ 124   3                      }
+ 125   2              }
+ 126   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    716    ----
+   CONSTANT SIZE    =    163    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      2      24
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

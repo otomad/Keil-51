@@ -1,0 +1,301 @@
+C51 COMPILER V9.54   TEXT1                                                                 07/02/2021 19:17:30 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE TEXT1
+OBJECT MODULE PLACED IN Text1.OBJ
+COMPILER INVOKED BY: D:\C51\BIN\C51.EXE Text1.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND TABS(2)
+
+line level    source
+
+   1          #include <reg51.h>
+   2          #include <intrins.h> 
+   3          #include "intrins.h"
+   4          #include "stdio.h"
+   5          
+   6          #define     u8       unsigned char
+   7          #define     u16      unsigned int
+   8          #define     uchar   unsigned char
+   9          #define     uint      unsigned int
+  10          
+  11          //TLC5615端口定义
+  12          sbit tlc5615_clk=P1^0;
+  13          sbit tlc5615_cs=P1^1;
+  14          sbit tlc5615_di=P1^2;
+  15          sbit tlc5615_dout=P1 ^3;
+  16          //蜂鸣器端口定义
+  17          sbit BEEP=P3^6;
+  18          //显示屏端口定义
+  19          sbit LCDRS = P0^7;
+  20          sbit LCDRW = P0^6;
+  21          sbit LCDEN = P0^5;
+  22          sbit D0    = P2^0;
+  23          sbit D1    = P2^1;
+  24          sbit D2    = P2^2;
+  25          sbit D3    = P2^3;
+  26          sbit D4    = P2^4;
+  27          sbit D5    = P2^5;
+  28          sbit D6    = P2^6;
+  29          sbit D7    = P2^7;
+  30          
+  31          unsigned char code zhx[]={64,67,70,73,76,79,82,85,88,91,94,96,99,102,104,106,109,111,113,115,117,118,120,1
+             -21,123,124,125,126,126,127,127,127,127,127,127,127,126,126,125,124,123,121,120,118,117,115,113,111,109,106,104,102,99,96
+             -,94,91,88,85,82,79,76,73,70,67,64,60,57,54,51,48,45,42,39,36,33,31,28,25,23,21,18,16,14,12,10,9,7,6,4,3,2,1,1,0,0,0,0,0,
+             -0,0,1,1,2,3,4,6,7,9,10,12,14,16,18,21,23,25,28,31,33,36,39,42,45,48,51,54,57,60};
+  32          
+  33          uchar strk[50];
+  34            
+  35          //短暂延时函数
+  36          void delay_ms(uint q)
+  37          {
+  38   1        uint i,j;
+  39   1        for(i=0;i<q;i++)
+  40   1        for(j=0;j<110;j++);
+  41   1      }
+  42          //延时函数
+  43          void delay(unsigned int us)
+  44          {
+  45   1          while(us--)
+  46   1        {
+  47   2           _nop_();
+  48   2        }
+  49   1      }
+  50          //TLC5615数模转化函数
+  51          void tlc5615_dac(unsigned int dat)
+  52          {
+C51 COMPILER V9.54   TEXT1                                                                 07/02/2021 19:17:30 PAGE 2   
+
+  53   1          unsigned char i;
+  54   1        dat<<=2;
+  55   1        tlc5615_clk=0;
+  56   1        tlc5615_cs=0;
+  57   1        for(i=0;i<16;i++)
+  58   1        {
+  59   2            tlc5615_di=(bit)(dat & 0x8000);
+  60   2          tlc5615_clk=0;
+  61   2          dat<<=1;
+  62   2          tlc5615_clk=1;
+  63   2        }
+  64   1        tlc5615_cs=1;
+  65   1        tlc5615_clk=0;
+  66   1        delay(10);
+  67   1      }
+  68          //显示屏延时
+  69          void LCDdelay(uint z)     //该延时大约100us（不精确，液晶操作的延时不要求很精确）
+  70          {
+  71   1        uint x,y;
+  72   1        for(x=z;x>0;x--)
+  73   1        for(y=10;y>0;y--);
+  74   1      }
+  75          //显示屏写数据
+  76          void LCD_WriteData(u8 dat)    
+  77          {
+  78   1        if(dat&0x01)D0=1;else D0=0;
+  79   1        if(dat&0x02)D1=1;else D1=0;
+  80   1        if(dat&0x04)D2=1;else D2=0;
+  81   1        if(dat&0x08)D3=1;else D3=0;
+  82   1        if(dat&0x10)D4=1;else D4=0;
+  83   1        if(dat&0x20)D5=1;else D5=0;
+  84   1        if(dat&0x40)D6=1;else D6=0;
+  85   1        if(dat&0x80)D7=1;else D7=0;
+  86   1      }
+  87          //显示屏写指令
+  88          void write_com(uchar com)
+  89          {
+  90   1        LCDRS=0;          
+  91   1        LCD_WriteData(com);
+  92   1        LCDdelay(5);
+  93   1        LCDEN=1;
+  94   1        LCDdelay(5);
+  95   1        LCDEN=0;
+  96   1      }
+  97          //显示屏写数据
+  98          void write_data(uchar date)
+  99          {
+ 100   1        LCDRS=1;
+ 101   1        LCD_WriteData(date);
+ 102   1        LCDdelay(5);
+ 103   1        LCDEN=1;
+ 104   1        LCDdelay(5);
+ 105   1        LCDEN=0;
+ 106   1      }
+ 107          //在指定位置写入指定数据
+ 108          void SelectPosition(unsigned char x,unsigned char y) 
+ 109          {     
+ 110   1        if (x == 0) 
+ 111   1        {     
+ 112   2          write_com(0x80 + y);     //表示第一行
+ 113   2        }
+ 114   1        else 
+C51 COMPILER V9.54   TEXT1                                                                 07/02/2021 19:17:30 PAGE 3   
+
+ 115   1        {      
+ 116   2          write_com(0xC0 + y);      //表示第二行
+ 117   2        }        
+ 118   1      }
+ 119          //写入字符串函数
+ 120          void LCD_Write_String(unsigned char x,unsigned char y,unsigned char *s) 
+ 121          {     
+ 122   1        SelectPosition(x,y) ;
+ 123   1        while (*s) 
+ 124   1        {     
+ 125   2          write_data( *s);     
+ 126   2          s ++;     
+ 127   2        }
+ 128   1      }
+ 129          //写入字节函数
+ 130          void LCD_Write_Char(u8 x,u8 y,u16 s,u8 l) 
+ 131          {     
+ 132   1        SelectPosition(x,y) ;
+ 133   1        if(l>=5)
+ 134   1          write_data(0x30+s/10000%10);  //万位
+ 135   1        if(l>=4)
+ 136   1          write_data(0x30+s/1000%10);   //千位
+ 137   1        if(l>=3)
+ 138   1          write_data(0x30+s/100%10);    //百位
+ 139   1        if(l>=2)
+ 140   1          write_data(0x30+s/10%10);     //十位
+ 141   1        if(l>=1)
+ 142   1          write_data(0x30+s%10);    //个位
+ 143   1      }
+ 144          //初始化显示屏
+ 145          void Init1602()
+ 146          {
+ 147   1        uchar i=0;
+ 148   1        write_com(0x38);//屏幕初始化
+ 149   1        write_com(0x0c);//打开显示 无光标 无光标闪烁
+ 150   1        write_com(0x06);//当读或写一个字符是指针后一一位
+ 151   1        write_com(0x01);//清屏  
+ 152   1      }
+ 153          //串口初始化
+ 154          void Usart_Init()
+ 155          { 
+ 156   1        TMOD=0X20;
+ 157   1        PCON=0X80;
+ 158   1        SCON=0X50;
+ 159   1        TH1=0XF3;
+ 160   1        TL1=0XF3;
+ 161   1        TR1=1;
+ 162   1        ES=1;
+ 163   1        EA=1;
+ 164   1      }
+ 165          //串口发送字节
+ 166          void sendbyte(unsigned char byt)
+ 167          {
+ 168   1       SBUF=byt;
+ 169   1       while(!TI);
+ 170   1       TI=0;
+ 171   1      }  
+ 172          //接收函数
+ 173          void  receivebyte()       
+ 174          {
+ 175   1        uchar shiftdata;
+ 176   1        static uint i=0;                             
+C51 COMPILER V9.54   TEXT1                                                                 07/02/2021 19:17:30 PAGE 4   
+
+ 177   1        if(RI)
+ 178   1        {
+ 179   2        RI=0;
+ 180   2        shiftdata=SBUF;
+ 181   2        strk[i]=shiftdata; i++;
+ 182   2        if(shiftdata=='\0'||shiftdata=='\n'){i=0;}
+ 183   2         }                   
+ 184   1      }
+ 185          //串口发送字符串
+ 186          void sendstring(unsigned char *string)
+ 187          {       
+ 188   1       uint k;
+ 189   1       while(*string!='\0')
+ 190   1       {
+ 191   2       sendbyte(*string);
+ 192   2       delay(100);string++;
+ 193   2       }
+ 194   1       for(k=0;k<50;k++)
+ 195   1       strk[k]=0;
+ 196   1      }
+ 197          
+ 198          //主函数
+ 199          void main(void)
+ 200          {
+ 201   1        
+ 202   1        unsigned char i;
+ 203   1        LCDRW=0;
+ 204   1        Init1602();
+ 205   1        Usart_Init();
+ 206   1        BEEP=1;
+ 207   1        delay_ms(500);
+ 208   1          BEEP=0; 
+ 209   1        LCD_Write_String(0,0,"Yin Jian "); 
+ 210   1        LCD_Write_String(1,0,"1900100319");  
+ 211   1        delay_ms(1000);
+ 212   1        delay_ms(500);
+ 213   1        Init1602();
+ 214   1        LCD_Write_String(0,0,"TLC5615"); 
+ 215   1        LCD_Write_String(1,0,"Waveform generation"); 
+ 216   1          while(1)
+ 217   1        {
+ 218   2        if(strk[2]=='o'&&strk[3]=='u'&&strk[4]=='t'&&strk[5]=='p'&&strk[6]=='u'&&strk[7]=='t'
+ 219   2        &&strk[8]==' '&&strk[9]=='p'&&strk[10]=='w'&&strk[11]=='m'&&strk[12]==' '&&strk[13]=='5'
+ 220   2          &&strk[14]=='0'&&strk[15]=='\r'&&strk[16]=='\n'   
+ 221   2        )
+ 222   2        {
+ 223   3          for(i=255;i>0;i--)
+ 224   3          tlc5615_dac(250);   
+ 225   3          for(i=0;i<255;i++)
+ 226   3          tlc5615_dac(0);
+ 227   3        printf("50%占空比的PWM波已经输出...\r\n");
+ 228   3          }
+ 229   2          if(strk[2]=='o'&&strk[3]=='u'&&strk[4]=='t'&&strk[5]=='p'&&strk[6]=='u'&&strk[7]=='t'
+ 230   2        &&strk[8]==' '&&strk[9]=='p'&&strk[10]=='w'&&strk[11]=='m'&&strk[12]==' '&&strk[13]=='3'
+ 231   2          &&strk[14]=='0'&&strk[15]=='\r'&&strk[16]=='\n'   
+ 232   2        )
+ 233   2         {
+ 234   3          for(i=0;i<255;i++)
+ 235   3          tlc5615_dac(0);
+ 236   3          for(i=255;i>0;i--)
+ 237   3          tlc5615_dac(250);
+ 238   3        printf("30%占空比的PWM波已经输出...\r\n");
+C51 COMPILER V9.54   TEXT1                                                                 07/02/2021 19:17:30 PAGE 5   
+
+ 239   3          }
+ 240   2         if(strk[2]=='o'&&strk[3]=='u'&&strk[4]=='t'&&strk[5]=='p'&&strk[6]=='u'&&strk[7]=='t'
+ 241   2        &&strk[8]==' '&&strk[9]=='s'&&strk[10]=='i'&&strk[11]=='n'&&strk[12]==' '&&strk[13]=='w'
+ 242   2          &&strk[14]=='a'&&strk[15]=='v'&&strk[16]=='e'&&strk[17]==' '&&strk[18]=='\r'&&strk[19]=='\n'        
+ 243   2        )
+ 244   2         {
+ 245   3        for(i=0;i<128;i++)
+ 246   3          {
+ 247   4          tlc5615_dac(zhx[i]);
+ 248   4        }
+ 249   3        printf("正弦波已经输出...\r\n");
+ 250   3          }
+ 251   2          if(RI)
+ 252   2          {
+ 253   3          sendstring(strk);
+ 254   3        } 
+ 255   2        }
+ 256   1      }
+ 257          //串口中断函数
+ 258          void Usart_0() interrupt 4
+ 259          {
+ 260   1        receivebyte();     
+ 261   1      }
+ 262          
+ 263          
+ 264          
+ 265          
+ 266          
+ 267          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1033    ----
+   CONSTANT SIZE    =    256    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     52       7
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

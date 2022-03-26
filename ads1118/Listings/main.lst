@@ -1,0 +1,127 @@
+C51 COMPILER V9.60.0.0   MAIN                                                              07/03/2021 00:46:31 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE main.c OMF2 OPTIMIZE(8,SPEED) BROWSE DEBUG PRINT(.\Listings\main.lst) OBJEC
+                    -T(.\Objects\main.obj)
+
+line level    source
+
+   1          #include "ads1118.h"
+   2          #include "lcd1602.h"
+   3          #include "buzzer.h"
+   4          #include "key.h"
+   5          #include "delay.h"
+   6          #include "uart.h"
+   7          #include "ChineseGBK.h"
+   8          
+   9          #define testVolt 0
+  10          
+  11          bit enabled = 1;
+  12          
+  13          void setState(bit state) {
+  14   1              LCD_WriteCommand(0x01); //光标复位，清屏
+  15   1              LCD_ShowString(1, 1, state ? "Press S1 Key to" : "Measurement");
+  16   1              LCD_ShowString(2, 1, state ? "Measure Voltage" : "Over!");
+  17   1              PutString(state ? str_welcome : str_stopMeasure);
+  18   1              if (!state) beepTime(440, 500);
+  19   1              enabled = state;
+  20   1      }
+  21          
+  22          void startMeasureVolt() {
+  23   1              float volt;
+  24   1              char str_volt[10];
+  25   1              if (!enabled) return;
+  26   1              LCD_ShowString(1, 1, "Measuring Volt ");
+  27   1              LCD_ShowString(2, 1, "Please Wait... ");
+  28   1              PutString(str_startMeasure);
+  29   1              volt = getVolt();
+  30   1              sprintf(str_volt, "%.2f V", volt);
+  31   1              delay(500);
+  32   1              LCD_WriteCommand(0x01); //光标复位，清屏
+  33   1              LCD_ShowString(1, 1, "Voltage:");
+  34   1              LCD_ShowString(2, 1, str_volt);
+  35   1              PutString(str_completeCaption);
+  36   1              PutString(str_volt);
+  37   1              PutString("\r\n");
+  38   1              beepTime(880, 400);
+  39   1              delay(1000);
+  40   1              beepTime(880, 400);
+  41   1      }
+  42          
+  43          void testMeasureVolt() {
+  44   1              float volt = getVolt();
+  45   1              char str_volt[10];
+  46   1              sprintf(str_volt, "%.2f V", volt);
+  47   1              LCD_ShowString(1, 1, "Voltage:");
+  48   1              LCD_ShowString(2, 1, str_volt);
+  49   1      }
+  50          
+  51          bit dealUartCommand(unsigned char command) {
+  52   1              if (command < 1 || command > 2) return 0;
+  53   1              if (command == 1) startMeasureVolt();
+  54   1              else if (command == 2) setState(!enabled);
+C51 COMPILER V9.60.0.0   MAIN                                                              07/03/2021 00:46:31 PAGE 2   
+
+  55   1              return 1;
+  56   1      }
+  57          
+  58          void main(void) {
+  59   1              beepTime(880, 500);
+  60   1              LCD_Init();
+  61   1              ADS1118_Init();
+  62   1              Init_USART();
+  63   1              
+  64   1              LCD_ShowString(1, 1, "Voltmeter");
+  65   1              delay(1000);
+  66   1              
+  67   1              LCD_ShowString(1, 1, "1900100305");
+  68   1              LCD_ShowString(2, 1, "TaoAnHang");
+  69   1              delay(1000);
+  70   1              
+  71   1              LCD_ShowString(1, 1, "1900100336");
+  72   1              LCD_ShowString(2, 1, "HeAnQi   ");
+  73   1              delay(1000);
+  74   1              
+  75   1              LCD_ShowString(1, 1, "1900100316");
+  76   1              LCD_ShowString(2, 1, "WangJing ");
+  77   1              delay(1000);
+  78   1      
+  79   1              setState(1);
+  80   1              while (1) {
+  81   2                      unsigned char keyNum = Key();
+  82   2                      switch (keyNum) {
+  83   3                              case 1:
+  84   3                                      #if !testVolt
+  85   3                                      startMeasureVolt();
+  86   3                                      #else
+                                              LCD_WriteCommand(0x01); //光标复位，清屏
+                                              while (1) {
+                                                      testMeasureVolt();
+                                              }
+                                              #endif
+  92   3                                      break;
+  93   3                              default:
+  94   3                                      break;
+  95   3                      }
+  96   2              }
+  97   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    518    ----
+   CONSTANT SIZE    =    174    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      22
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1       1
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,11 @@
+".\Objects\main.obj",
+".\Objects\buzzer.obj",
+".\Objects\delay.obj",
+".\Objects\lcd1602.obj",
+".\Objects\matrixkey.obj",
+".\Objects\str.obj",
+".\Objects\timer0.obj",
+".\Objects\calc.obj" 
+TO ".\Objects\Project" 
+
+PRINT(".\Listings\Project.map") REMOVEUNUSED 

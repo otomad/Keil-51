@@ -1,0 +1,55 @@
+C51 COMPILER V9.60.0.0   BUZZER                                                            07/03/2021 16:28:24 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE BUZZER
+OBJECT MODULE PLACED IN .\Objects\buzzer.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE buzzer.c OMF2 OPTIMIZE(8,SPEED) BROWSE DEBUG PRINT(.\Listings\buzzer.lst) O
+                    -BJECT(.\Objects\buzzer.obj)
+
+line level    source
+
+   1          #include <regx52.h>
+   2          
+   3          sbit buzzer = P3 ^ 6; //Buzzer port
+   4          
+   5          /**
+   6           * @brief  Buzzer private delay function, used for change pitch.
+   7           * @param  {unsigned int} i - Delay time which is for pitch.
+   8           * If i is equal to 10, the delay time is about 100μs, and different sound effects can be achieved by mod
+             -ifying the delay time.
+   9           * @retval None
+  10           */
+  11          void buzzerDelay(unsigned int i) {
+  12   1              while (--i);
+  13   1      }
+  14          
+  15          /**
+  16           * @brief  Buzzer singing!
+  17           * @param  {unsigned int} ms - Singing time, range: 0~32767
+  18           * @retval None
+  19           */
+  20          void beepTime(unsigned int hz, unsigned int ms) {
+  21   1              unsigned int i, cms = 1e5 / hz, len = ms / cms * 100;
+  22   1              for (i = 0; i < len; i++) {
+  23   2                      buzzer = !buzzer;
+  24   2                      buzzerDelay(cms);
+  25   2              }
+  26   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     95    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       2
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

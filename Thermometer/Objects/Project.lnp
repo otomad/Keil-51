@@ -1,0 +1,11 @@
+".\Objects\main.obj",
+".\Objects\ds18b20.obj",
+".\Objects\lcd1602.obj",
+".\Objects\buzzer.obj",
+".\Objects\delay.obj",
+".\Objects\key.obj",
+".\Objects\uart.obj",
+".\Objects\ChineseGBK.obj" 
+TO ".\Objects\Project" 
+
+PRINT(".\Listings\Project.map") REMOVEUNUSED 

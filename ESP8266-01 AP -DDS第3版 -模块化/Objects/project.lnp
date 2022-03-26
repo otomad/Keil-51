@@ -1,0 +1,9 @@
+".\Objects\main.obj",
+".\Objects\Nixie.obj",
+".\Objects\Buzzer.obj",
+".\Objects\public.obj",
+".\Objects\UART.obj",
+".\Objects\CheckSum.obj",
+".\Objects\ESP8266.obj" 
+TO ".\Objects\project" 
+PRINT(".\Listings\project.m51") RAMSIZE(256) 

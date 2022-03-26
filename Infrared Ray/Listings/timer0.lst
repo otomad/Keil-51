@@ -1,0 +1,33 @@
+C51 COMPILER V9.60.0.0   TIMER0                                                            06/29/2021 23:26:28 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE TIMER0
+OBJECT MODULE PLACED IN .\Objects\timer0.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE timer0.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\ti
+                    -mer0.lst) OBJECT(.\Objects\timer0.obj)
+
+line level    source
+
+   1          #include "reg52.h"
+   2          
+   3          void timer0_init() {
+   4   1              EA = 1;
+   5   1              TMOD |= 0x02;//设定定时器工作在方式二，8位定时器，12M，256us
+   6   1              TH0 = 0;
+   7   1              ET0 = 1;//打开定时器中断
+   8   1              TR0 = 1;//打开定时器
+   9   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     13    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

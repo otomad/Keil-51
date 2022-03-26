@@ -1,0 +1,47 @@
+C51 COMPILER V9.60.0.0   MAIN                                                              06/30/2021 19:53:41 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\main.ls
+                    -t) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include <lcd1602.h>
+   2          #include <CSBofCM.h>
+   3          //#include<STCY1Delay.h>
+   4          #ifndef udata
+   5                  typedef unsigned char uchar;
+   6                  typedef unsigned int uint;
+   7                  typedef unsigned long ulong;
+   8          #endif
+   9          void main(void)
+  10          {
+  11   1              uchar i;
+  12   1              code uchar array[]="CSB of CM Test";
+  13   1              Lcd1602_Init();
+  14   1              CSB_Init();
+  15   1              for(i=0;array[i];i++)
+  16   1                      Lcd1602_WriteDC(array[i],1);
+  17   1              while(1)
+  18   1              {
+  19   2                      CSB_UseLcd1602Show(CSB_GetOnce());
+  20   2                      Delay100ms();
+  21   2              }
+  22   1              return;
+  23   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     38    ----
+   CONSTANT SIZE    =     15    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       1
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

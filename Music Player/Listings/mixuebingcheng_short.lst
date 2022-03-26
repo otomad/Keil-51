@@ -1,0 +1,32 @@
+C51 COMPILER V9.60.0.0   MIXUEBINGCHENG_SHORT                                              06/25/2021 15:00:00 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE MIXUEBINGCHENG_SHORT
+OBJECT MODULE PLACED IN .\Objects\mixuebingcheng_short.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE songs\mixuebingcheng_short.c COMPACT OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTE
+                    -XTEND PRINT(.\Listings\mixuebingcheng_short.lst) OBJECT(.\Objects\mixuebingcheng_short.obj)
+
+line level    source
+
+   1          #include "notes.h"
+   2          note code miXueBingCheng[] = {{A4,0.3},{D5,0.15},{E5,0.15},{F_5,0.3},{A5,0.3},{A5,0.45},{B5,0.15},{A5,0.3}
+             -,{F_5,0.3},{D5,0.3},{D5,0.15},{E5,0.15},{F_5,0.3},{F_5,0.3},{E5,0.3},{E5,0.3},{D5,0.3},{A4,0.3},{A5,0.6},{F_5,0.3},{A5,0
+             -.3},{A5,0.45},{B5,0.15},{A5,0.3},{F_5,0.225},{E5,0.075},{D5,0.3},{D5,0.15},{E5,0.15},{F_5,0.3},{F_5,0.3},{E5,0.3},{D5,0.
+             -3},{E5,1.2},{F_5,0.3},{A5,0.3},{A5,0.45},{B5,0.15},{A5,0.3},{F_5,0.225},{E5,0.075},{D5,0.3},{D5,0.15},{E5,0.15},{F_5,0.3
+             -},{F_5,0.3},{E5,0.3},{E5,0.3},{D5,1.2},{F_5,0.075},{G5,0.525},{G5,0.6},{G5,0.3},{A5,0.075},{B5,0.825},{G5,0.075},{A5,0.5
+             -25},{G5,0.075},{A5,0.225},{F_5,0.3},{E5,1.2},{F_5,0.3},{A5,0.3},{A5,0.45},{B5,0.15},{A5,0.3},{F_5,0.225},{E5,0.075},{D5,
+             -0.3},{D5,0.15},{E5,0.15},{F_5,0.3},{F_5,0.3},{E5,0.3},{E5,0.3},{D5,1.2},{END,0}};
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   ----    ----
+   CONSTANT SIZE    =    385    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

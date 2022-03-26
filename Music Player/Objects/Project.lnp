@@ -1,0 +1,14 @@
+".\Objects\main.obj",
+".\Objects\delay.obj",
+".\Objects\lcd1602.obj",
+".\Objects\matrixKey.obj",
+".\Objects\buzzer.obj",
+".\Objects\notes.obj",
+".\Objects\timer0.obj",
+".\Objects\qingtian.obj",
+".\Objects\qinghuaci.obj",
+".\Objects\yequ_short.obj" 
+TO ".\Objects\Project" 
+
+PRINT(".\Listings\Project.map") DISABLEWARNING (16) 
+REMOVEUNUSED 

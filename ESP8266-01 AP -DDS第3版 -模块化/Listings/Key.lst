@@ -1,0 +1,30 @@
+C51 COMPILER V9.60.0.0   KEY                                                               05/26/2021 22:55:38 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE KEY
+OBJECT MODULE PLACED IN .\Objects\Key.obj
+COMPILER INVOKED BY: E:\Keil5_533\C51\BIN\C51.EXE Key.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\Key
+                    -.lst) TABS(2) OBJECT(.\Objects\Key.obj)
+
+line level    source
+
+   1          #include "reg52.h"
+   2          #include "public.h"
+   3          
+   4          
+   5          unsigned char Key()
+   6          {
+   7   1        unsigned char KeyNumber=0;
+   8   1        switch(ComBuf[4])
+*** ERROR C202 IN LINE 8 OF Key.c: 'ComBuf': undefined identifier
+   9   1                {
+  10   2                  case 0x03:{P3_5=0;delay_ms(10);P3_5=1;KeyNumber=1;break;}
+  11   2                  case 0x04:{P3_4=0;delay_ms(10);P3_4=1;KeyNumber=1;break;}
+  12   2                  case 0x05:{P3_3=0;delay_ms(10);P3_3=1;KeyNumber=1;break;}
+  13   2                  case 0x06:{P3_2=0;delay_ms(10);P3_2=1;KeyNumber=1;break;}
+  14   2                }
+  15   1        return KeyNumber;
+  16   1      }
+  17          
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  1 ERROR(S)

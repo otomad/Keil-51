@@ -1,0 +1,90 @@
+C51 COMPILER V9.60.0.0   NOTES                                                             07/03/2021 03:42:50 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE NOTES
+OBJECT MODULE PLACED IN .\Objects\notes.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE notes.c OMF2 OPTIMIZE(8,SPEED) BROWSE DEBUG PRINT(.\Listings\notes.lst) OBJ
+                    -ECT(.\Objects\notes.obj)
+
+line level    source
+
+   1          #include "notes.h"
+   2          #include "timer0.h"
+   3          #include "bool.h"
+   4          #include "buzzer.h"
+   5          
+   6          //note code test[] = {{A4,0.3},{D5,0.15},{E5,0.15},{F_5,0.3},{A5,0.3},{A5,0.45},{B5,0.15},{A5,0.3},{F_5,0.
+             -3},{D5,0.3},{D5,0.15},{E5,0.15},{F_5,0.3},{F_5,0.3},{E5,0.3},{E5,0.3},{D5,0.3},{A4,0.3},{A5,0.3},{F_5,0.3},{A5,0.3},{A5,
+             -0.45},{B5,0.15},{A5,0.3},{F_5,0.225},{E5,0.075},{D5,0.3},{D5,0.15},{E5,0.15},{F_5,0.3},{F_5,0.3},{E5,0.3},{D5,0.3},{E5,1
+             -.2},{F_5,0.3},{A5,0.3},{A5,0.45},{B5,0.15},{A5,0.3},{F_5,0.225},{E5,0.075},{D5,0.3},{D5,0.15},{E5,0.15},{F_5,0.3},{F_5,0
+             -.3},{E5,0.3},{E5,0.3},{D5,1.2},{F_5,0.075},{G5,0.525},{G5,0.6},{G5,0.3},{A5,0.075},{B5,0.825},{G5,0.075},{A5,0.525},{G5,
+             -0.075},{A5,0.225},{F_5,0.3},{E5,1.2},{F_5,0.3},{A5,0.3},{A5,0.45},{B5,0.15},{A5,0.3},{F_5,0.225},{E5,0.075},{D5,0.3},{D5
+             -,0.15},{E5,0.15},{F_5,0.3},{F_5,0.3},{E5,0.3},{E5,0.3},{D5,1.2},{END,0}};
+   7          
+   8          unsigned char isPlaying = false;
+   9          unsigned int process = 0, duration = 0;
+  10          //note *song = 0;
+  11          
+  12          note *songList[] = {
+  13                  &qingTian,
+  14                  &qingHuaCi,
+  15                  &yeQu
+  16          };
+  17          
+  18          void playMusic(unsigned char index) {
+  19   1              unsigned char quit = false;
+  20   1              note *song = songList[index];
+  21   1              /*setBeepHz(1);
+  22   1              isPlaying = true;
+  23   1              beepSong();*/
+  24   1              while (true) {
+  25   2                      note *current = *song + process;
+  26   2                      if (current->pitch == END || quit) {
+  27   3                              process = 0;
+  28   3                              break;
+  29   3                      }
+  30   2                      quit = !beepTime(key2hz(current->pitch), (current->duration * 1000));
+  31   2                      process++;
+  32   2              }
+  33   1      }
+  34          
+  35          /*void Timer0Routine() interrupt 1 {
+  36                  static unsigned int T0Count;
+  37                  Timer0InitValue();
+  38                  T0Count++;
+  39                  if (T0Count >= 1000) {
+  40                          T0Count = 0;
+  41                          /*if (isPlaying) {
+  42                                  if (test[process].pitch == END) {
+  43                                          setBeepHz(0);
+  44                                          process = 0;
+  45                                          duration = 0;
+  46                                          isPlaying = false;
+  47                                  }
+  48                                  // beep(key2hz(test[process].pitch), false);
+C51 COMPILER V9.60.0.0   NOTES                                                             07/03/2021 03:42:50 PAGE 2   
+
+  49                                  setBeepHz(key2hz(test[process].pitch));
+  50                                  duration = (unsigned int)(test[process].duration * 1000);
+  51                                  process++;
+  52                          }*
+  53                  }
+  54          }*/
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    140    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     14       7
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

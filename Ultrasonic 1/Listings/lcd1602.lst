@@ -1,0 +1,152 @@
+C51 COMPILER V9.60.0.0   LCD1602                                                           06/30/2021 19:53:41 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE LCD1602
+OBJECT MODULE PLACED IN .\Objects\lcd1602.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE lcd1602.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\lcd1
+                    -602.lst) OBJECT(.\Objects\lcd1602.obj)
+
+line level    source
+
+   1          #include<reg51.h>
+   2          #ifndef udata
+   3                  #define udata
+   4                  typedef unsigned char uchar;
+   5                  typedef unsigned int uint;
+   6                  typedef unsigned long ulong;
+   7          #endif
+   8          
+   9          #define Lcd1602_DATA P0//8位数据口
+  10          sbit Lcd1602_E=P2^7;//使能端
+  11          sbit Lcd1602_RS=P2^6;//指令or数据
+  12          sbit Lcd1602_RW=P2^5;//写入or读出
+  13          sbit Lcd1602_Busy=Lcd1602_DATA^7;
+  14          
+  15          /*****************Lcd1602.h**************/
+  16          /*****************可用函数***************/
+  17          /************编写于2018/08/18************/
+  18          /**************作者：Belous**************/
+  19          /*******测试应用与STC89C516——12MHZ*******/
+  20          void Lcd1602_Init(void);//初始化Lcd1602
+  21          void Lcd1602_WriteDC(uchar com,uchar control);
+  22          //向Lcd1602写入指令或数据，control=0指令，control=1数据;
+  23          //进行数据写入操作后，光标会按预设左移或右移
+  24          uchar Lcd1602_ReadDC(uchar control);
+  25          //从Lcd1602读出状态或数据，control=0状态，control=1数据
+  26          //读取状态，D7是读写检测端、D0-D6为当前数据指针的数值
+  27          //读取数据，返回当前数据指针处字节，不会改变数据指针，须自行移位
+  28          void Lcd1602_Firstrow(void);//调整位置-第一行
+  29          void Lcd1602_Secondrow(void);//调整位置-第二行——！须确保开启两行模式！
+  30          void Lcd1602_MoveSP(uchar sp);//改变数据指针为指定数值
+  31          /****************************************/
+  32          
+  33          void Lcd1602_Init(void)
+  34          {
+  35   1              //所有指令
+  36   1              Lcd1602_WriteDC(0x38,0);//2行和5*7矩阵（数据总线8位）
+  37   1              //Lcd1602_WriteDC(0x30,0);//1行和5*7矩阵（数据总线8位）
+  38   1              //Lcd1602_WriteDC(0x3C,0);//2行和5*10矩阵（数据总线8位）
+  39   1              //Lcd1602_WriteDC(0x34,0);//1行和5*10矩阵（数据总线8位）
+  40   1              Lcd1602_WriteDC(0x01,0);//清除显示屏幕
+  41   1              //Lcd1602_WriteDC(0x02,0);//归起始位
+  42   1              //Lcd1602_WriteDC(0x04,0);//光标左移
+  43   1              Lcd1602_WriteDC(0x06,0);//光标右移
+  44   1              //Lcd1602_WriteDC(0x05,0);//显示右移
+  45   1              //Lcd1602_WriteDC(0x07,0);//显示左移
+  46   1              //Lcd1602_WriteDC(0x08,0);//显示关，光标关
+  47   1              //Lcd1602_WriteDC(0x0A,0);//显示关，光标开
+  48   1              Lcd1602_WriteDC(0x0C,0);//显示开，光标关
+  49   1              //Lcd1602_WriteDC(0x0E,0);//显示开，光标闪
+  50   1              //Lcd1602_WriteDC(0x10,0);//光标位置左移
+  51   1              //Lcd1602_WriteDC(0x14,0);//光标位置右移
+  52   1              //Lcd1602_WriteDC(0x18,0);//整个显示左移
+  53   1              //Lcd1602_WriteDC(0x1C,0);//整个显示右移
+  54   1              Lcd1602_WriteDC(0x80,0);//使光标到第一行起点
+C51 COMPILER V9.60.0.0   LCD1602                                                           06/30/2021 19:53:41 PAGE 2   
+
+  55   1              //Lcd1602_WriteDC(0xC0,0);//使光标到第二行起点
+  56   1      }
+  57          void Lcd1602_Delay(uint c)//1602延迟1us，测试通过于11.0592MHZ
+  58          {
+  59   1              uchar a,b;
+  60   1              for (; c>0; c--)
+  61   1              {
+  62   2                       for (b=199;b>0;b--)
+  63   2                       {
+  64   3                                      for(a=1;a>0;a--);
+  65   3                       }      
+  66   2              }
+  67   1      }
+  68          void Lcd1602_Ready(void)
+  69          {
+  70   1              Lcd1602_Busy=1;//使输入
+  71   1              Lcd1602_RS=0;//命令
+  72   1              Lcd1602_RW=1;//读出
+  73   1              Lcd1602_E=1;
+  74   1              while(Lcd1602_Busy)
+  75   1              {
+  76   2                      Lcd1602_E=0;
+  77   2                      Lcd1602_Delay(1);
+  78   2                      Lcd1602_E=1;
+  79   2              }
+  80   1              return;
+  81   1      }
+  82          void Lcd1602_WriteDC(uchar com,uchar control)
+  83          {
+  84   1              Lcd1602_Ready();
+  85   1              if(control)
+  86   1                      Lcd1602_RS=1;//数据
+  87   1              else
+  88   1                      Lcd1602_RS=0;//命令
+  89   1              Lcd1602_RW = 0;//写入
+  90   1              Lcd1602_DATA = com;
+  91   1              Lcd1602_Delay(1);
+  92   1              Lcd1602_E = 1;
+  93   1              Lcd1602_Delay(5);
+  94   1              Lcd1602_E = 0;//Lcd得到信息
+  95   1      }
+  96          uchar Lcd1602_ReadDC(uchar control)
+  97          {
+  98   1              Lcd1602_DATA=0xFF;//I/0口至输入模式
+  99   1              Lcd1602_Ready();
+ 100   1              if(control)
+ 101   1                      Lcd1602_RS = 1;//读取数据
+ 102   1              else
+ 103   1                      Lcd1602_RS = 0;//读取状态
+ 104   1              Lcd1602_RW = 1;
+ 105   1              Lcd1602_Delay(1);
+ 106   1              Lcd1602_E = 1;
+ 107   1              return Lcd1602_DATA;
+ 108   1      }
+ 109          void Lcd1602_Firstrow(void)
+ 110          {
+ 111   1              Lcd1602_WriteDC(0x80,0);//使光标到第一行起点
+ 112   1              return;
+ 113   1      }
+ 114          void Lcd1602_Secondrow(void)
+ 115          {
+ 116   1              //Lcd1602_WriteDC(0x38,0);//确保可以显示第二行
+C51 COMPILER V9.60.0.0   LCD1602                                                           06/30/2021 19:53:41 PAGE 3   
+
+ 117   1              Lcd1602_WriteDC(0xC0,0);//使光标到第二行起点
+ 118   1              return;
+ 119   1      }
+ 120          void Lcd1602_MoveSP(uchar sp)
+ 121          {
+ 122   1              Lcd1602_WriteDC(sp+0x80,0);
+ 123   1              return;
+ 124   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    192    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

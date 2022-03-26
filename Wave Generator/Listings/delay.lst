@@ -1,0 +1,48 @@
+C51 COMPILER V9.60.0.0   DELAY                                                             06/30/2021 20:58:28 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE DELAY
+OBJECT MODULE PLACED IN .\Objects\delay.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE delay.c OMF2 OPTIMIZE(8,SPEED) BROWSE DEBUG PRINT(.\Listings\delay.lst) OBJ
+                    -ECT(.\Objects\delay.obj)
+
+line level    source
+
+   1          void delay(unsigned int ms) { // @11.0592MHz
+   2   1              unsigned char i, j;
+   3   1              while (ms--) {
+   4   2                      i = 2;
+   5   2                      j = 199; // 239
+   6   2                      do {
+   7   3                              while (--j);
+   8   3                      } while (--i);
+   9   2              }
+  10   1      }
+  11          
+  12          /*------------------------------------------------
+  13                       超声波专用延时函数
+  14          ------------------------------------------------*/
+  15          void delayt(unsigned int x) {
+  16   1          unsigned char j;
+  17   1          while (x-- > 0) {
+  18   2                      for (j = 0; j < 125; j++);
+  19   2          }
+  20   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     52    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

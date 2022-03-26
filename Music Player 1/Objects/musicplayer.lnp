@@ -1,0 +1,6 @@
+".\Objects\STARTUP.obj",
+".\Objects\main.obj",
+".\Objects\Buzzer.obj",
+".\Objects\util.obj" 
+TO ".\Objects\musicplayer" 
+PRINT(".\Listings\musicplayer.m51") RAMSIZE(256) 

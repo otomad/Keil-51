@@ -1,0 +1,198 @@
+C51 COMPILER V9.60.0.0   TLC5615                                                           06/30/2021 20:58:27 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE TLC5615
+OBJECT MODULE PLACED IN .\Objects\tlc5615.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE tlc5615.c OMF2 OPTIMIZE(8,SPEED) BROWSE DEBUG PRINT(.\Listings\tlc5615.lst)
+                    - OBJECT(.\Objects\tlc5615.obj)
+
+line level    source
+
+   1          /****************简易信号发生器****************************
+   2            程序功能：输出正弦波、锯齿波、方波、三角波
+   3            涉及芯片：TLC5615
+   4          **********************************************************/
+   5          #include <regx52.h>
+   6          #include "stdio.h"
+   7          #include "tlc5615.h"
+   8          #include "uart.h"
+   9          #include "ChineseGBK.h"
+  10          
+  11          #define uint unsigned int
+  12          #define uchar unsigned char
+  13                  
+  14          waveType type = NONE;
+  15          uchar duty = 50;
+  16          
+  17          sbit din = P1 ^ 5;
+  18          sbit sclk = P1 ^ 6;
+  19          sbit cs = P1 ^ 7;
+  20          // sbit w2 = P1 ^ 0;
+  21          // #define PI acos(-1)
+  22          
+  23          uchar code sine_tab[256] = {
+  24                  //输出电压从0到最大值（正弦波1/4部分）
+  25                  0x80, 0x83, 0x86, 0x89, 0x8d, 0x90, 0x93, 0x96, 0x99, 0x9c, 0x9f, 0xa2,
+  26                  0xa5, 0xa8, 0xab, 0xae, 0xb1, 0xb4, 0xb7, 0xba, 0xbc, 0xbf, 0xc2, 0xc5,
+  27                  0xc7, 0xca, 0xcc, 0xcf, 0xd1, 0xd4, 0xd6, 0xd8, 0xda, 0xdd, 0xdf, 0xe1,
+  28                  0xe3, 0xe5, 0xe7, 0xe9, 0xea, 0xec, 0xee, 0xef, 0xf1, 0xf2, 0xf4, 0xf5,
+  29                  0xf6, 0xf7, 0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfd, 0xfe, 0xff, 0xff,
+  30                  0xff, 0xff, 0xff, 0xff,
+  31                  //输出电压从最大值到0（正弦波1/4部分）
+  32                  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe, 0xfd, 0xfd, 0xfc, 0xfb, 0xfa,
+  33                  0xf9, 0xf8, 0xf7, 0xf6, 0xf5, 0xf4, 0xf2, 0xf1, 0xef, 0xee, 0xec, 0xea,
+  34                  0xe9, 0xe7, 0xe5, 0xe3, 0xe1, 0xde, 0xdd, 0xda, 0xd8, 0xd6, 0xd4, 0xd1,
+  35                  0xcf, 0xcc, 0xca, 0xc7, 0xc5, 0xc2, 0xbf, 0xbc, 0xba, 0xb7, 0xb4, 0xb1,
+  36                  0xae, 0xab, 0xa8, 0xa5, 0xa2, 0x9f, 0x9c, 0x99, 0x96, 0x93, 0x90, 0x8d,
+  37                  0x89, 0x86, 0x83, 0x80,
+  38                  //输出电压从0到最小值（正弦波1/4部分）
+  39                  0x80, 0x7c, 0x79, 0x76, 0x72, 0x6f, 0x6c, 0x69, 0x66, 0x63, 0x60, 0x5d,
+  40                  0x5a, 0x57, 0x55, 0x51, 0x4e, 0x4c, 0x48, 0x45, 0x43, 0x40, 0x3d, 0x3a,
+  41                  0x38, 0x35, 0x33, 0x30, 0x2e, 0x2b, 0x29, 0x27, 0x25, 0x22, 0x20, 0x1e,
+  42                  0x1c, 0x1a, 0x18, 0x16, 0x15, 0x13, 0x11, 0x10, 0x0e, 0x0d, 0x0b, 0x0a,
+  43                  0x09, 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x02, 0x01, 0x00, 0x00,
+  44                  0x00, 0x00, 0x00, 0x00,
+  45                  //输出电压从最小值到0（正弦波1/4部分）
+  46                  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x02, 0x03, 0x04, 0x05,
+  47                  0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0d, 0x0e, 0x10, 0x11, 0x13, 0x15,
+  48                  0x16, 0x18, 0x1a, 0x1c, 0x1e, 0x20, 0x22, 0x25, 0x27, 0x29, 0x2b, 0x2e,
+  49                  0x30, 0x33, 0x35, 0x38, 0x3a, 0x3d, 0x40, 0x43, 0x45, 0x48, 0x4c, 0x4e,
+  50                  0x51, 0x55, 0x57, 0x5a, 0x5d, 0x60, 0x63, 0x66, 0x69, 0x6c, 0x6f, 0x72,
+  51                  0x76, 0x79, 0x7c, 0x80
+  52          };
+  53          
+  54          /**
+C51 COMPILER V9.60.0.0   TLC5615                                                           06/30/2021 20:58:27 PAGE 2   
+
+  55           * TLC5615 专用延时函数
+  56           */
+  57          void _delay(uint t) {
+  58   1              while (t--);
+  59   1      }
+  60          
+  61          uchar bdata date; //位寻址
+  62          sbit date7 = date ^ 7;
+  63          sbit date6 = date ^ 6;
+  64          sbit date5 = date ^ 5;
+  65          sbit date4 = date ^ 4;
+  66          sbit date3 = date ^ 3;
+  67          sbit date2 = date ^ 2;
+  68          sbit date1 = date ^ 1;
+  69          sbit date0 = date ^ 0;
+  70          
+  71          void write_sip5615(uchar k) {
+  72   1              date = k;
+  73   1              /*for (uchar i = 7; i >= 0; i--) {
+  74   1                      din = date ^ i;
+  75   1                      sclk = 0;
+  76   1                      sclk = 1;
+  77   1              }*/
+  78   1              #define writeDate(n) din = date##n; sclk = 0; sclk = 1
+  79   1              writeDate(7);
+  80   1              writeDate(6);
+  81   1              writeDate(5);
+  82   1              writeDate(4);
+  83   1              writeDate(3);
+  84   1              writeDate(2);
+  85   1              writeDate(1);
+  86   1              writeDate(0);
+  87   1      }
+  88          
+  89          void write_5615(uint k) {
+  90   1              k <<= 2;
+  91   1              cs = 0;
+  92   1              write_sip5615(k >> 8); //送高八位
+  93   1              write_sip5615(k);          //送低八位
+  94   1              cs = 1;
+  95   1      }
+  96          
+  97          /* void init_5615() {
+  98                  w2=0;
+  99                  _delay(500);
+ 100                  w2=1;
+ 101                  _delay(500);
+ 102          } */
+ 103          
+ 104          void showWave_5615(waveType _type, uchar _duty) {
+ 105   1              static uint sine_i = 0,
+ 106   1                                      saw_i = 0,
+ 107   1                                      tri_i;
+ 108   1              if (_duty > 100) _duty = 50;
+ 109   1              switch (_type) {
+ 110   2                      case SINE: //正弦波
+ 111   2                              write_5615(sine_tab[sine_i]); // 127.5 * (sin(PI / 128 * sine_i) + 1) // 如果用后面这个公式运
+             -行会变慢
+ 112   2                              sine_i++;
+ 113   2                              _delay(16);
+ 114   2                              sine_i %= 256;
+ 115   2                              break;
+C51 COMPILER V9.60.0.0   TLC5615                                                           06/30/2021 20:58:27 PAGE 3   
+
+ 116   2                      case SAW: //锯齿波
+ 117   2                              write_5615(saw_i);
+ 118   2                              saw_i += 2;
+ 119   2                              _delay(55);
+ 120   2                              saw_i %= 250;
+ 121   2                              break;
+ 122   2                      case SQR: //方波（此处用单片机的I/O效果更好）
+ 123   2                              write_5615(200);
+ 124   2                              _delay(20 * _duty);
+ 125   2                              write_5615(10);
+ 126   2                              _delay(20 * (100 - _duty));
+ 127   2                              break;
+ 128   2                      case TRI: //三角波
+ 129   2                              #define TRIANGULAR_LENGTH 278
+ 130   2                              for (tri_i = 0; tri_i <= TRIANGULAR_LENGTH; tri_i++) {
+ 131   3                                      _delay(1);
+ 132   3                                      write_5615(tri_i);
+ 133   3                              }
+ 134   2                              for (tri_i = TRIANGULAR_LENGTH; tri_i > 0; tri_i--) {
+ 135   3                                      write_5615(tri_i);
+ 136   3                                      _delay(1);
+ 137   3                              }
+ 138   2                              break;
+ 139   2                      default:
+ 140   2                              break;
+ 141   2              }
+ 142   1      }
+ 143          
+ 144          void showWave() {
+ 145   1              showWave_5615(type, duty);
+ 146   1      }
+ 147          
+ 148          void setWaveType(waveType _type) {
+ 149   1              type = _type;
+ 150   1              if (type == NONE);
+ 151   1              else if (type == SQR) {
+ 152   2                      char duty_str[6];
+ 153   2                      sprintf(duty_str, "%d", (int)duty);
+ 154   2                      PutString(duty_str);
+ 155   2                      PutString(str_pwm);
+ 156   2              } else {
+ 157   2                      PutString(
+ 158   2                              type == SINE ? str_sin :
+ 159   2                              type == SAW ? str_saw :
+ 160   2                              str_tri
+ 161   2                      );
+ 162   2              }
+ 163   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    438    ----
+   CONSTANT SIZE    =    259    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      9       6
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+C51 COMPILER V9.60.0.0   TLC5615                                                           06/30/2021 20:58:27 PAGE 4   
+
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

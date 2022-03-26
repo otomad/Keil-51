@@ -1,0 +1,101 @@
+C51 COMPILER V9.60.0.0   CALC                                                              07/01/2021 22:37:20 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE CALC
+OBJECT MODULE PLACED IN .\Objects\calc.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE calc.c OMF2 OPTIMIZE(8,SPEED) BROWSE DEBUG PRINT(.\Listings\calc.lst) OBJEC
+                    -T(.\Objects\calc.obj)
+
+line level    source
+
+   1          #include "calc.h"
+   2          
+   3          #define LIMIT 20 // 虽然不限制也可以，但万一出现死循环也不太好
+   4          #define LENGTH 9 // 16 位的屏幕最多也只能计算八位
+   5          
+   6          struct Datum *convertData(char *str, struct Datum *dat) {
+   7   1              unsigned char i, j = 0;
+   8   1              double n = 0;
+   9   1              signName s = PLUS_POS;
+  10   1              for (i = 0; i < LIMIT; i++) {
+  11   2                      if (str[i] >= '0' && str[i] <= '9')
+  12   2                              n = n * 10 + (str[i] - '0');
+  13   2                      else {
+  14   3                              dat[j].sign = s; // dat[j] = {s, n};
+  15   3                              dat[j].num = n;
+  16   3                              j++;
+  17   3                              if (str[i] == '\0') {
+  18   4                                      dat[j].sign = END;
+  19   4                                      dat[j].num = 0;
+  20   4                                      break;
+  21   4                              }
+  22   3                              s = str[i] == '+' ? PLUS_POS :
+  23   3                                      str[i] == '-' ? PLUS_NEG :
+  24   3                                      str[i] == '*' && str[i + 1] == '-' ? (i++, TIMES_NEG) :
+  25   3                                      str[i] == '/' && str[i + 1] == '-' ? (i++, DIV_NEG) :
+  26   3                                      str[i] == '*' ? TIMES_POS :
+  27   3                                      DIV_POS;
+  28   3                              n = 0;
+  29   3                      }
+  30   2              }
+  31   1              return dat;
+  32   1      }
+  33          
+  34          double calcData(struct Datum *dat) {
+  35   1              double ans = 0;
+  36   1              unsigned char i;
+  37   1              struct Datum *curData, *prevData;
+  38   1              // 优先计算乘除法
+  39   1              for (i = 0; i < LIMIT; i++) {
+  40   2                      if (dat[i].sign == END) break;
+  41   2                      if (dat[i].sign == NONE) continue;
+  42   2                      prevData = curData;
+  43   2                      curData = dat + i; // 等同于 &dat[i]
+  44   2                      if (curData->sign >= TIMES_POS) {
+  45   3                              if (curData->sign == TIMES_NEG || curData->sign == DIV_NEG) {
+  46   4                                      prevData->sign = !(prevData->sign - PLUS_POS) + PLUS_POS;
+  47   4                                      curData->sign--;
+  48   4                              }
+  49   3                              prevData->num = curData->sign == TIMES_POS ? prevData->num * curData->num : prevData->num / curData->nu
+             -m;
+  50   3                              curData->sign = NONE;
+  51   3                              curData = prevData;
+  52   3                      }
+  53   2              }
+C51 COMPILER V9.60.0.0   CALC                                                              07/01/2021 22:37:20 PAGE 2   
+
+  54   1              // 接下来从左往右计算
+  55   1              for (i = 0; i < LIMIT; i++) {
+  56   2                      if (dat[i].sign == END) break;
+  57   2                      if (dat[i].sign == NONE) continue;
+  58   2      //              prevData = curData;
+  59   2                      curData = dat + i; // 等同于 &dat[i]
+  60   2                      ans = curData->sign == PLUS_POS ? ans + curData->num : ans - curData->num;
+  61   2              }
+  62   1              return ans;
+  63   1      }
+  64          
+  65          // double calc(char *str, unsigned char length) {
+  66          double calc(char *str) {
+  67   1              struct Datum xdata dat[LENGTH]; // 只能放在 xdata 区，放在 code 区就不起作用了
+  68   1              convertData(str, dat);
+  69   1              return calcData(dat);
+  70   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    837    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----      45
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      27
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

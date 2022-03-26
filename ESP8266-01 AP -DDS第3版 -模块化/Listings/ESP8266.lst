@@ -1,0 +1,76 @@
+C51 COMPILER V9.60.0.0   ESP8266                                                           05/26/2021 23:57:10 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE ESP8266
+OBJECT MODULE PLACED IN .\Objects\ESP8266.obj
+COMPILER INVOKED BY: E:\Keil5_533\C51\BIN\C51.EXE ESP8266.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings
+                    -\ESP8266.lst) TABS(2) OBJECT(.\Objects\ESP8266.obj)
+
+line level    source
+
+   1          /**
+   2          单片机最高可设置的波特率为9600，所以先通过下载器把ESP8266改为9600波特率(AT+CIOBAUD=9600)；
+   3          单片机可设置的波特率通过串口中断初始化（波特率）设置
+   4          
+   5          **/
+   6          #include "public.h"   
+   7          #include "UART.h"   
+   8          
+   9          /**
+  10          * @brief  实现发送指令，并换新行
+  11            * @param  *cmd
+  12            * @retval 
+  13            **/
+  14          void ESP8266_SendCmd(u8 *pbuf)
+  15          {
+  16   1        while(*pbuf!='\n') //遇到空格跳出循环 
+  17   1        {
+  18   2          UART_SendByte(*pbuf);
+  19   2          delay_10us(5);
+  20   2          pbuf++; 
+  21   2        }
+  22   1        delay_10us(5);
+  23   1        UART_SendByte('\n');//换行
+  24   1      }
+  25          
+  26          
+  27          
+  28          //ESP8266-WIFI模块工作模式初始化AP服务端
+  29          void ESP8266_ModeInit(void)
+  30          {
+  31   1        
+  32   1      
+  33   1        
+  34   1        ESP8266_SendCmd("AT+CWMODE=2\r\n");//设置路由器模式 1 staTIon模式 2 AP点 路由器模式 3 station+AP混合模式
+  35   1        delay_ms(1000);
+  36   1        
+  37   1        ESP8266_SendCmd("AT+CWSAP=\"ESP8266\",\"12345678\",11,3\r\n"); //设置WIFI热点名及密码
+  38   1        delay_ms(1000);
+  39   1        
+  40   1        ESP8266_SendCmd("AT+CIPAP=\"192.168.4.1\"\r\n");//重新启动wifi模块
+  41   1        delay_ms(1000);
+  42   1      
+  43   1      //  ESP8266_SendCmd("AT+RST");//重新启动wifi模块
+  44   1        ESP8266_SendCmd("AT+CIPMUX=1\r\n"); //开启多连接模式，允许多个各客户端接入
+  45   1        delay_ms(1000);
+  46   1      
+  47   1        ESP8266_SendCmd("AT+CIPSERVER=1,8080\r\n"); //启动TCP/IP 端口为8080 实现基于网络控制  
+  48   1        delay_ms(1000);
+  49   1      
+  50   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    135    ----
+C51 COMPILER V9.60.0.0   ESP8266                                                           05/26/2021 23:57:10 PAGE 2   
+
+   CONSTANT SIZE    =    112    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       3
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

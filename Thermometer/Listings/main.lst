@@ -1,0 +1,109 @@
+C51 COMPILER V9.60.0.0   MAIN                                                              07/02/2021 18:14:57 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE main.c OMF2 OPTIMIZE(8,SPEED) BROWSE DEBUG PRINT(.\Listings\main.lst) OBJEC
+                    -T(.\Objects\main.obj)
+
+line level    source
+
+   1          #include <regx52.h>
+   2          #include <stdio.h>
+   3          #include "ds18b20.h"
+   4          #include "lcd1602.h"
+   5          #include "buzzer.h"
+   6          #include "delay.h"
+   7          #include "key.h"
+   8          #include "uart.h"
+   9          #include "ChineseGBK.h"
+  10          
+  11          bit enabled = 1;
+  12          
+  13          void setState(bit state) {
+  14   1              LCD_WriteCommand(0x01); //光标复位，清屏
+  15   1              LCD_ShowString(1, 1, state ? "Press S1 Key to" : "Measurement");
+  16   1              LCD_ShowString(2, 1, state ? "Measure Temp" : "Over!");
+  17   1              PutString(state ? str_welcome : str_stopMeasure);
+  18   1              if (!state) beepTime(440, 500);
+  19   1              enabled = state;
+  20   1      }
+  21          
+  22          void startMeasureTemp() {
+  23   1              float temp;
+  24   1              char xdata str_temp_lcd[10],
+  25   1                       xdata str_temp_uart[13];
+  26   1              if (!enabled) return;
+  27   1              LCD_ShowString(1, 1, "Measuring Temp");
+  28   1              LCD_ShowString(2, 1, "Please Wait...");
+  29   1              PutString(str_startMeasure);
+  30   1              temp = ReadTemp();
+  31   1              delay(500);
+  32   1              sprintf(str_temp_lcd, "%.2f %cC", temp, 0xdf); // 0xdf - 温度符号（LCD1602 - Shift-JIS 编码）
+  33   1              sprintf(str_temp_uart, "%.2f %c%cC\r\n", temp, 0xa1, 0xe3); // 0xa1, 0xe3 - 温度符号（GBK 编码）
+  34   1              LCD_WriteCommand(0x01); //光标复位，清屏
+  35   1              LCD_ShowString(1, 1, "Temperature:");
+  36   1              LCD_ShowString(2, 1, str_temp_lcd);
+  37   1              PutString(str_completeCaption);
+  38   1              PutString(str_temp_uart);
+  39   1              beepTime(880, 220);
+  40   1              delay(800);
+  41   1              beepTime(880, 220);
+  42   1      }
+  43          
+  44          bit dealUartCommand(unsigned char command) {
+  45   1              if (command < 1 || command > 2) return 0;
+  46   1              if (command == 1) startMeasureTemp();
+  47   1              else if (command == 2) setState(!enabled);
+  48   1              return 1;
+  49   1      }
+  50          
+  51          void main() {
+  52   1              beepTime(880, 500);
+  53   1              LCD_Init();
+  54   1              Init_USART();
+C51 COMPILER V9.60.0.0   MAIN                                                              07/02/2021 18:14:57 PAGE 2   
+
+  55   1              
+  56   1              LCD_ShowString(1, 1, "Thermometer");
+  57   1              delay(1000);
+  58   1              LCD_ClearLine(1);
+  59   1              
+  60   1              LCD_ShowString(1, 1, "1900100329");
+  61   1              LCD_ShowString(2, 1, "HuJing");
+  62   1              delay(1000);
+  63   1              
+  64   1              LCD_ShowString(1, 1, "1900100335");
+  65   1              LCD_ShowString(2, 1, "HeWen ");
+  66   1              delay(1000);
+  67   1              
+  68   1              setState(1);
+  69   1              while (1) {
+  70   2                      unsigned char keyNum = Key();
+  71   2                      switch (keyNum) {
+  72   3                              case 1:
+  73   3                                      startMeasureTemp();
+  74   3                                      break;
+  75   3                              default:
+  76   3                                      break;
+  77   3                      }
+  78   2              }
+  79   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    474    ----
+   CONSTANT SIZE    =    160    ----
+   XDATA SIZE       =   ----      23
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       6
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1       1
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
